@@ -9,26 +9,26 @@ from controller.medication_controller import MedicationClient
 router = APIRouter()
 logger = logging.getLogger("log")
 
-@router.post("/medication", response_model=dict)
+
+@router.post("/medication/{patient_id}", response_model=dict)
 @permission_required("MEDICATION", "WRITE")
-async def create_medication(med: MedicationCreateModel, request: Request):
+async def create_medication(med: MedicationCreateModel, patient_id: str, request: Request):
     logger.info(f"Medication: {med}")
-    return MedicationClient.create_medication(med)
+    return MedicationClient.create_medication(med, patient_id)
 
 
 @router.get("/medication/{patient_id}")
 @permission_required("MEDICATION", "READ")
 async def get_medication_by_patient_id(patient_id: str, request: Request):
-    print("patient_id is: ", patient_id)
     logger.info(f"Patient ID: {patient_id}")
     return MedicationClient.get_medication_by_patient_id(patient_id)
 
 
 @router.put("/medication/{patient_id}")
 @permission_required("MEDICATION", "EDIT")
-async def update_medication(updated_medication: MedicationUpdateModel, request: Request):
+async def update_medication(updated_medication: MedicationUpdateModel, patient_id: str, request: Request):
     logger.info(f"Updated Medication: {updated_medication}")
-    return MedicationClient.update_medication_by_patient_id(updated_medication)
+    return MedicationClient.update_medication_by_patient_id(patient_id, updated_medication)
 
 
 @router.get("/master/medication/{medication_name}")

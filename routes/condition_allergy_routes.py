@@ -10,24 +10,24 @@ router = APIRouter()
 logger = logging.getLogger("log")
 
 
-@router.post("/condition_allergy")
+@router.post("/condition_allergy/{patient_id}")
 @permission_required("CONDITION", "WRITE")
-async def create_condition_allergy(condition: ConditionModel, request: Request):
+async def create_condition_allergy(condition: ConditionModel, patient_id: str, request: Request):
     logger.info(f"Request Payload: {condition}")
-    response = ConditionClient.create_condition_allergy(condition)
+    response = ConditionClient.create_condition_allergy(condition, patient_id)
     logger.info(f"Response Payload: {response}")
     return response
 
 
-@router.get("/condition_allergy")
+@router.get("/condition_allergy/{patient_id}")
 @permission_required("CONDITION", "READ")
-async def get_condition_allergy(patient_id: str, request: Request):
+async def get_condition_patient_id(patient_id: str, request: Request):
     response = ConditionClient.get_condition_by_patient_id(patient_id)
     logger.info(f"Response Payload: {response}")
     return response
 
 
-@router.put("/condition_allergy")
+@router.put("/condition_allergy/{patient_id}")
 @permission_required("CONDITION", "UPDATE")
 async def update_condition_allergy(patient_id: str, condition: ConditionUpdateModel, request: Request):
     logger.info(f"Request Payload: {condition}")

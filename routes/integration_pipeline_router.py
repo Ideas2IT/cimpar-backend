@@ -57,6 +57,13 @@ async def get_immunizations_by_patient_id(patient_id: str, request: Request):
     return HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id)
 
 
+@router.get("/immunization/{patient_id}/{immunization_id}")
+@permission_required("IMMUNIZATION", "READ")
+async def get_immunizations_id(patient_id: str, immunization_id: str, request: Request):
+    logger.info(f"Patient ID: {patient_id}")
+    return HL7ImmunizationClient.get_immunizations_by_id(patient_id, immunization_id)
+
+
 @router.get("/immunization")
 @permission_required("IMMUNIZATION", "READ")
 async def get_all_immunizations(request: Request):

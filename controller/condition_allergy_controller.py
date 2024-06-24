@@ -18,12 +18,12 @@ logger = logging.getLogger("log")
 
 class ConditionClient:
     @staticmethod
-    def create_condition_allergy(con: ConditionModel):
+    def create_condition_allergy(con: ConditionModel, patient_id: str):
         try:
             if con.current_condition:
                 current_condition = Condition(
                     code=CodeableConcept(coding=[Coding(system=concept.system, code=concept.code, display=concept.display) for concept in con.current_condition]),
-                    subject=Reference(reference=f"{PATIENT_REFERENCE}/{con.patient_id}"),
+                    subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 )
                 current_condition.save()
             else:
@@ -32,7 +32,7 @@ class ConditionClient:
             if con.additional_condition and any(concept.display for concept in con.additional_condition):
                 additional_condition = Condition(
                     code=CodeableConcept(coding=[Coding(system=concept.system, code=concept.code, display=concept.display) for concept in con.additional_condition]),
-                    subject=Reference(reference=f"{PATIENT_REFERENCE}/{con.patient_id}"),
+                    subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 )
                 additional_condition.save()
             else:
@@ -41,7 +41,7 @@ class ConditionClient:
             if con.current_allergy:
                 current_allergy = AllergyIntolerance(
                     code=CodeableConcept(coding=[Coding(system=concept.system, code=concept.code, display=concept.display) for concept in con.current_allergy]),
-                    patient=Reference(reference=f"{PATIENT_REFERENCE}/{con.patient_id}"),
+                    patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 )
                 current_allergy.save()
             else:
@@ -50,7 +50,7 @@ class ConditionClient:
             if con.additional_allergy:
                 additional_allergy = AllergyIntolerance(
                     code=CodeableConcept(coding=[Coding(system=concept.system, code=concept.code, display=concept.display) for concept in con.additional_allergy]),
-                    patient=Reference(reference=f"{PATIENT_REFERENCE}/{con.patient_id}"),
+                    patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 )
                 additional_allergy.save()
             else:
@@ -61,7 +61,7 @@ class ConditionClient:
                 family_condition = Condition(
                     clinicalStatus=CodeableConcept(coding=[Coding(system=STATUS_SYSTEM, code=family_status)]),
                     code=CodeableConcept(coding=[Coding(system=concept.system, code=concept.code, display=concept.display) for concept in con.family_medications]),
-                    subject=Reference(reference=f"{PATIENT_REFERENCE}/{con.patient_id}"),
+                    subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 )
                 family_condition.save()
 
@@ -115,7 +115,7 @@ class ConditionClient:
                 current_condition = Condition(
                     id=con.current_condition_id,
                     code=CodeableConcept(coding=[Coding(system=concept.system, code=concept.code, display=concept.display) for concept in con.current_condition]),
-                    subject=Reference(reference=f"{PATIENT_REFERENCE}/{con.patient_id}"),
+                    subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 )
                 current_condition.save()
             else:
@@ -125,7 +125,7 @@ class ConditionClient:
                 additional_condition = Condition(
                     id=con.additional_condition_id,
                     code=CodeableConcept(coding=[Coding(system=concept.system, code=concept.code, display=concept.display) for concept in con.additional_condition]),
-                    subject=Reference(reference=f"{PATIENT_REFERENCE}/{con.patient_id}"),
+                    subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 )
                 additional_condition.save()
             else:
@@ -135,7 +135,7 @@ class ConditionClient:
                 current_allergy = AllergyIntolerance(
                     id=con.current_allergy_id,
                     code=CodeableConcept(coding=[Coding(system=concept.system, code=concept.code, display=concept.display) for concept in con.current_allergy]),
-                    patient=Reference(reference=f"{PATIENT_REFERENCE}/{con.patient_id}"),
+                    patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 )
                 current_allergy.save()
             else:
@@ -145,19 +145,19 @@ class ConditionClient:
                 additional_allergy = AllergyIntolerance(
                     id=con.additional_allergy_id,
                     code=CodeableConcept(coding=[Coding(system=concept.system, code=concept.code, display=concept.display) for concept in con.additional_allergy]),
-                    patient=Reference(reference=f"{PATIENT_REFERENCE}/{con.patient_id}"),
+                    patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 )
                 additional_allergy.save()
             else:
                 additional_allergy = None
 
-            if  con.family_condition:
+            if con.family_condition:
                 family_status = "active" if con.family_condition == True else "unknown"
                 family_condition = Condition(
                     id=con.family_condition_id,
                     clinicalStatus=CodeableConcept(coding=[Coding(system=STATUS_SYSTEM, code=family_status)]),
                     code=CodeableConcept(coding=[Coding(system=concept.system, code=concept.code, display=concept.display) for concept in con.family_medications]),
-                    subject=Reference(reference=f"{PATIENT_REFERENCE}/{con.patient_id}"),
+                    subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 )
                 family_condition.save()
 
@@ -182,7 +182,6 @@ class ConditionClient:
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
-        
 
     @staticmethod
     def get_allergy_list(allergy_name: str):

@@ -1,4 +1,4 @@
-from fastapi import Response, status
+from fastapi import status
 from fastapi.responses import JSONResponse
 import logging
 import traceback
@@ -24,8 +24,7 @@ class HL7ImmunizationClient:
             logger.info(f"Added Successfully in DB: {response_data}")
             if response_data.status_code == 200:
                 return {"status_code": 201, "data": "Record created Successfully"}
-            else:
-                raise Exception("Unable to create the record")
+            raise Exception("Unable to create the record")
         except Exception as e:
             logger.error(f"Unable to create a Immunization: {str(e)}")
             logger.error(traceback.format_exc())
@@ -43,9 +42,38 @@ class HL7ImmunizationClient:
     def get_immunizations_by_patient_id(patient_id: str):
         try:
             response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization/?patient=Patient/{patient_id}")
-            if not response_immunization:
-                return Response(status_code=404, content="Immunizations not found")
-            immunizations = response_immunization.json() if response_immunization.status_code == 200 else []
+            immunizations = response_immunization.json()
+            if immunizations.get('total', 0) == 0:
+                logger.info(f"No Immunization found for patient: {patient_id}")
+                return JSONResponse(
+                    content={"error": "No Immunization found for patient"},
+                    status_code=status.HTTP_404_NOT_FOUND
+                )
+            return {"immunizations": immunizations}
+        except Exception as e:
+            logger.error(f"Unable to get immunization data: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to retrieve Immunization",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        
+    @staticmethod
+    def get_immunizations_by_id(patient_id: str , immunization_id: str):
+        try:
+            response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization/{immunization_id}?patient=Patient/{patient_id}")
+            immunizations = response_immunization.json()
+            if response_immunization.status_code == 404:
+                logger.info(f"Immunization Not Found: {response_immunization}")
+                return JSONResponse(
+                    content={"error": "No Matching Record"},
+                    status_code=status.HTTP_404_NOT_FOUND
+                )          
             return {"immunizations": immunizations}
         except Exception as e:
             logger.error(f"Unable to get immunization data: {str(e)}")
@@ -65,7 +93,7 @@ class HL7ImmunizationClient:
         try:
             response_immunization = Immunization.get()
             if not response_immunization:
-                return Response(status_code=404, content="Immunizations not found")
+                return JSONResponse(status_code=404, content="Immunizations not found")
             return {"immunizations": response_immunization}
         except Exception as e:
             logger.error(f"Unable to get immunization data: {str(e)}")

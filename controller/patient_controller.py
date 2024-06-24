@@ -132,10 +132,10 @@ class PatientClient:
             )
         
     @staticmethod
-    def update_patient_by_id(pat: PatientUpdateModel):
+    def update_patient_by_id(pat: PatientUpdateModel, patient_id: str):
         try:
             patient = Patient(
-                id=pat.patient_id,
+                id=patient_id,
                 name=[
                     HumanName(
                         family=pat.last_name, given=[pat.first_name, pat.middle_name]

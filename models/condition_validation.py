@@ -7,7 +7,6 @@ class Concept(BaseModel):
     display: str
 
 class ConditionModel(BaseModel):
-    patient_id: str
     current_condition: list[Concept]
     additional_condition: list[Concept]
     current_allergy: list[Concept]
@@ -16,7 +15,6 @@ class ConditionModel(BaseModel):
     family_medications: list[Concept]
 
 class ConditionUpdateModel(BaseModel):
-    patient_id: str
     current_condition_id: str
     additional_condition_id: str
     current_allergy_id: str

@@ -9,12 +9,12 @@ class EncounterModel(BaseModel):
     reason: str
     primary_care_team: str
     treatment_summary: str
+    follow_up_care: str
     status: str
     class_code: str
-    patient_id: str
+
 
 class EncounterUpdateModel(BaseModel):
-    id: str
     location: str 
     phone_number: str
     admission_date: str
@@ -24,6 +24,5 @@ class EncounterUpdateModel(BaseModel):
     treatment_summary: str
     status: str
     class_code: str
-    patient_id: str
     
 
