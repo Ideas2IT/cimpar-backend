@@ -9,6 +9,7 @@ from aidbox.resource.appointment import Appointment_Participant
 from constants import PATIENT_REFERENCE, INTEND, STATUS
 from services.aidbox_resource_wrapper import Appointment
 from models.appointment_validation import AppoinmentModel
+from controller.patient_controller import PatientClient
 from services.aidbox_resource_wrapper import MedicationRequest
 from services.aidbox_resource_wrapper import AllergyIntolerance
 from services.aidbox_resource_wrapper import MedicationStatement
@@ -130,7 +131,8 @@ class AppointmentClient:
             if appointment:
                 return appointment
             return JSONResponse(
-                content={"Error retrieving appointments"}, status_code=status.HTTP_404_NOT_FOUND
+                content={"Error retrieving appointments"},
+                status_code=status.HTTP_404_NOT_FOUND,
             )
         except Exception as e:
             logger.error(f"Error retrieving encounters: {str(e)}")
@@ -141,7 +143,68 @@ class AppointmentClient:
             }
 
             return JSONResponse(
-                content=error_response_data,
-                status_code=status.HTTP_400_BAD_REQUEST
+                content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
 
+    @staticmethod
+    def get_by_id(
+        patient_id: str,
+        appointment_id: str,
+        current_medication_id: str,
+        other_medication_id: str,
+        allergy_id: str,
+    ):
+        try:
+            patient = PatientClient.get_patient_by_id(patient_id)
+            appointment = Appointment.make_request(
+                method="GET",
+                endpoint=f"/fhir/Appointment/{appointment_id}?participant=Patient/{patient_id}",
+            )
+            current_medication = MedicationStatement.make_request(
+                method="GET",
+                endpoint=f"/fhir/MedicationStatement/{current_medication_id}?subject=Patient/{patient_id}",
+            )
+            other_medication = MedicationRequest.make_request(
+                method="GET",
+                endpoint=f"/fhir/MedicationRequest/{other_medication_id}?subject=Patient/{patient_id}",
+            )
+            current_allergy = AllergyIntolerance.make_request(
+                method="GET",
+                endpoint=f"/fhir/AllergyIntolerance/{allergy_id}/?patient=Patient/{patient_id}",
+            )
+            if appointment.status_code == 404:
+                logger.info("Appointment not found")
+
+            if current_medication.status_code == 404:
+                logger.info("Current medication not found")
+
+            if other_medication.status_code == 404:
+                logger.info("Other medication not found")
+
+            if current_allergy.status_code == 404:
+                logger.info("Current allergy not found")
+
+            if current_allergy.status_code == 404:
+                logger.info("Current allergy not found")
+                return JSONResponse(
+                    content={"error": "Current allergy not found"},
+                    status_code=status.HTTP_404_NOT_FOUND,
+                )
+            return {
+                "patient": patient,
+                "appointment": appointment.json(),
+                "current_medication": current_medication.json(),
+                "other_medication": other_medication.json(),
+                "current_allergy": current_allergy.json(),
+            }
+        except Exception as e:
+            logger.error(f"Error retrieving appointments: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to retrieve appointments",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
+            )

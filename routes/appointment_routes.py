@@ -24,4 +24,11 @@ async def get_all_appointment(request: Request):
     return AppointmentClient.get_all_appointment()
 
 
+@router.get("/appointment/{patient_id}/{appointment_id}/{current_medication_id}/{other_medication_id}/{allergy_id}")
+@permission_required("APPOINTMENT", "READ")
+async def get_by_id(patient_id: str, appointment_id: str, current_medication_id: str, other_medication_id: str, allergy_id: str, request: Request):
+    logger.info("Fetching all appointment")
+    return AppointmentClient.get_by_id(patient_id, appointment_id, current_medication_id, other_medication_id, allergy_id)
+
+
 
