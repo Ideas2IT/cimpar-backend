@@ -23,7 +23,8 @@ from utils.middleware import add_trace_and_session_id, origins
 from utils.logging_config import simple_logger
 from utils.config import Logs
 from routes import (insurance_routes, integration_pipeline_router, authentication_router, patient_routes,
-                    encounter_routes, medication_routes, condition_allergy_routes, appointment_routes)
+                    encounter_routes, medication_routes, condition_allergy_routes, appointment_routes,
+                    lab_result_routes)
 
 
 # Load settings
@@ -55,6 +56,7 @@ app.include_router(medication_routes.router, prefix="/api", tags=["MEDICATION"])
 app.include_router(authentication_router.router, prefix="/api", tags=["AUTHENTICATION"])
 app.include_router(condition_allergy_routes.router, prefix="/api", tags=["ALLERGY_CONDITION"])
 app.include_router(appointment_routes.router, prefix="/api", tags=["APPOINTMENT"])
+app.include_router(lab_result_routes.router, prefix="/api", tags=["LAB_RESULT"])
 app.include_router(integration_pipeline_router.router, prefix="/api/HL7v2", tags=["AIDBOX_INTEGRATION"])
 
 

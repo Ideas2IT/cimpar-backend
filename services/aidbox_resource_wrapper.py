@@ -12,6 +12,7 @@ from aidbox.resource.medicationstatement import MedicationStatement as Medicatio
 from aidbox.resource.condition import Condition as ConditionR
 from aidbox.resource.allergyintolerance import AllergyIntolerance as AllergyIntoleranceR
 from aidbox.resource.appointment import Appointment as AppointmentR
+from aidbox.resource.observation import Observation as ObservationR
 
 
 
@@ -40,4 +41,7 @@ class AllergyIntolerance(AidboxApi, AllergyIntoleranceR):
     pass
 
 class Appointment(AidboxApi, AppointmentR):
+    pass
+
+class Observation(AidboxApi, ObservationR):
     pass
