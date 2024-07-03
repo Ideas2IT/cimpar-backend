@@ -20,14 +20,11 @@ CURRENT_MEDICATION = "Current"
 OTHER_MEDICATION = "Other"
 RACE_URL = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
 ETHNICITY_URL = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
-<<<<<<< Updated upstream
 HEIGHT_URL = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-height"
 WEIGHT_URL = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-weight"
 PATIENT_EXTENTION_URL = "ombCategory"
 EXTENTION_CODE = "2106-3"
 EXTENTION_SYSTEM = "urn:oid:2.16.840.1.113883.6.238"
-=======
->>>>>>> Stashed changes
 RACE_TEXT = "text"
 RACE_SYSTEM = "urn:oid:2.16.840.1.113883.6.238"
 RACE_CODE = "2106-3"
@@ -39,8 +36,4 @@ TREATMENT_SUMMARY_CODE = "TREATSUM"
 ENCOUNTER_STATUS  = "in-progress"
 CLASS_CODE = "IMP"
 ENCOUNTER_COURTESY_SYSTEM = "http://terminology.hl7.org/CodeSystem/special-courtesy"
-<<<<<<< Updated upstream
 MESSAGE_PATH = "message/custom_message.json"
-=======
-MESSAGE_PATH = "message/custom_message.json"
->>>>>>> Stashed changes
