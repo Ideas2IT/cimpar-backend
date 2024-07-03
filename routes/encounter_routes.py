@@ -52,5 +52,8 @@ async def update_encounter(patient_id: str, encounter_id: str, encounter: Encoun
 async def delete_encounter(patient_id: str, encounter_id: str, request: Request):
     logger.info(f"Deleting encounter ID:{patient_id}")
     return EncounterClient.delete_by_encounter_id(patient_id, encounter_id)
+<<<<<<< Updated upstream
 
 
+=======
+>>>>>>> Stashed changes
