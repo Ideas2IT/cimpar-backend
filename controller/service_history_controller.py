@@ -3,7 +3,6 @@ from fastapi.responses import JSONResponse
 import logging
 import traceback
 
-
 from controller.lab_result_controller import ObservationClient
 from controller.hl7_immunization_controller import HL7ImmunizationClient
 
