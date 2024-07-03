@@ -59,6 +59,7 @@ app.include_router(appointment_routes.router, prefix="/api", tags=["APPOINTMENT"
 app.include_router(lab_result_routes.router, prefix="/api", tags=["LAB_RESULT"])
 app.include_router(service_history_routes.router, prefix="/api", tags=["SERVICE_HISTORY"])
 app.include_router(custom_message_router.router, prefix="/api", tags=["CUSTOM_MESSAGE"])
+app.include_router(service_history_routes.router, prefix="/api", tags=["SERVICE_HISTORY"])
 app.include_router(integration_pipeline_router.router, prefix="/api/HL7v2", tags=["AIDBOX_INTEGRATION"])
 
 
