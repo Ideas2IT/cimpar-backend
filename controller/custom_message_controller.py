@@ -22,22 +22,17 @@ class CustomMessageClient:
                 logger.info(f"Reading message from file: {relative_path}")
                 data = json.load(file)
                 logger.info(f"Message read from file: {data}")
-                message = data.get("message", "No message found")
                 return JSONResponse(
-                    status_code=status.HTTP_200_OK, content={"message": message}
+                    status_code=status.HTTP_200_OK, content=data
                 )
 
         except Exception as e:
             logger.error(f"Error retrieving message: {str(e)}")
             logger.error(traceback.format_exc())
-            error_response_data = {
-                "error": "Unable to read message",
-                "details": str(e),
-            }
-
+            responce = {"message": "Our Services"}   
             return JSONResponse(
-                content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
-            )
+                        content=responce, status_code=status.HTTP_200_OK
+                    )
 
     @staticmethod
     def update_custom_message(new_message: str):

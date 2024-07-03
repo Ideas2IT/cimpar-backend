@@ -11,11 +11,9 @@ from services.aidbox_service import AidboxApi
 from constants import (
     PATIENT_REFERENCE,
     STATUS_SYSTEM,
-    CURRENT_CONDITION,
-    OTHER_CONDITION,
-    CURRENT_ALLERGY,
-    OTHER_ALLERGY,
-    FAMILY_CONDITION,
+    CURRENT,
+    FAMILY, 
+    OTHER
 )
 from services.aidbox_resource_wrapper import Condition
 from services.aidbox_resource_wrapper import AllergyIntolerance
@@ -42,15 +40,13 @@ class ConditionClient:
                         ]
                     ),
                     subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
-                    note=[Annotation(text=CURRENT_CONDITION)],
+                    note=[Annotation(text=CURRENT)],
                 )
                 current_condition.save()
             else:
                 current_condition = None
 
-            if con.additional_condition and any(
-                concept.display for concept in con.additional_condition
-            ):
+            if con.additional_condition: 
                 additional_condition = Condition(
                     code=CodeableConcept(
                         coding=[
@@ -63,7 +59,7 @@ class ConditionClient:
                         ]
                     ),
                     subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
-                    note=[Annotation(text=OTHER_CONDITION)],
+                    note=[Annotation(text=OTHER)],
                 )
                 additional_condition.save()
             else:
@@ -82,7 +78,7 @@ class ConditionClient:
                         ]
                     ),
                     patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
-                    note=[Annotation(text=CURRENT_ALLERGY)],
+                    note=[Annotation(text=CURRENT)],
                 )
                 current_allergy.save()
             else:
@@ -101,7 +97,7 @@ class ConditionClient:
                         ]
                     ),
                     patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
-                    note=[Annotation(text=OTHER_ALLERGY)],
+                    note=[Annotation(text=OTHER)],
                 )
                 additional_allergy.save()
             else:
@@ -124,21 +120,15 @@ class ConditionClient:
                         ]
                     ),
                     subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
-                    note=[Annotation(text=FAMILY_CONDITION)],
+                    note=[Annotation(text=FAMILY)],
                 )
                 family_condition.save()
 
             response_data = {
-                "current_condition": current_condition.id
-                if current_condition
-                else None,
-                "additional_condition": additional_condition.id
-                if additional_condition
-                else None,
+                "current_condition": current_condition.id if current_condition else None,
+                "additional_condition": additional_condition.id if additional_condition else None,
                 "current_allergy": current_allergy.id if current_allergy else None,
-                "additional_allergy": additional_allergy.id
-                if additional_allergy
-                else None,
+                "additional_allergy": additional_allergy.id if additional_allergy else None,
                 "family_condition": family_condition.id if family_condition else None,
                 "created": True,
             }
@@ -199,14 +189,13 @@ class ConditionClient:
                         ]
                     ),
                     subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+                    note=[Annotation(text=CURRENT)],
                 )
                 current_condition.save()
             else:
                 current_condition = None
 
-            if con.additional_condition and any(
-                concept.display for concept in con.additional_condition
-            ):
+            if con.additional_condition:
                 additional_condition = Condition(
                     id=con.additional_condition_id,
                     code=CodeableConcept(
@@ -220,6 +209,7 @@ class ConditionClient:
                         ]
                     ),
                     subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+                    note=[Annotation(text=OTHER)],                
                 )
                 additional_condition.save()
             else:
@@ -239,6 +229,7 @@ class ConditionClient:
                         ]
                     ),
                     patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+                    note=[Annotation(text=CURRENT)],
                 )
                 current_allergy.save()
             else:
@@ -258,6 +249,7 @@ class ConditionClient:
                         ]
                     ),
                     patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+                    note=[Annotation(text=OTHER)],
                 )
                 additional_allergy.save()
             else:
@@ -281,20 +273,15 @@ class ConditionClient:
                         ]
                     ),
                     subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+                    note=[Annotation(text=FAMILY)],
                 )
                 family_condition.save()
 
             response_data = {
-                "current_condition": current_condition.id
-                if current_condition
-                else None,
-                "additional_condition": additional_condition.id
-                if additional_condition
-                else None,
+                "current_condition": current_condition.id if current_condition else None,
+                "additional_condition": additional_condition.id if additional_condition else None,
                 "current_allergy": current_allergy.id if current_allergy else None,
-                "additional_allergy": additional_allergy.id
-                if additional_allergy
-                else None,
+                "additional_allergy": additional_allergy.id if additional_allergy else None,
                 "family_condition": family_condition.id if family_condition else None,
                 "patient_id": patient_id,
                 "created": True,

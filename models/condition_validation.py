@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-
+from typing import Optional
 
 class Concept(BaseModel):
     code: str
@@ -15,11 +15,11 @@ class ConditionModel(BaseModel):
     family_medications: list[Concept]
 
 class ConditionUpdateModel(BaseModel):
-    current_condition_id: str
-    additional_condition_id: str
-    current_allergy_id: str
-    additional_allergy_id: str
-    family_condition_id: str
+    current_condition_id: Optional[str] = None
+    additional_condition_id: Optional[str] = None
+    current_allergy_id: Optional[str] = None
+    additional_allergy_id: Optional[str] = None
+    family_condition_id: Optional[str] = None
     current_condition: list[Concept]
     additional_condition: list[Concept]
     current_allergy: list[Concept]

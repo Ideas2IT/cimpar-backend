@@ -17,15 +17,15 @@ class ServiceHistoryClient:
             immuzation = HL7ImmunizationClient.get_immunizations_by_patient_id(
                 patient_id
             )
-            if all_service == True:
-                return ServiceHistoryClient.create_final_dictionary(
+            if all_service:
+                return ServiceHistoryClient.create_final_values(
                     service_history, immuzation
                 )
         
-            if lab_result == True:
+            if lab_result:
                 return ServiceHistoryClient.process_service_history(service_history)
             
-            if immunization == True:
+            if immunization:
                 return ServiceHistoryClient.process_immunization(immuzation)
         
 
@@ -85,7 +85,7 @@ class ServiceHistoryClient:
                 )
         return service_history_entries
 
-    def create_final_dictionary(service_history, immunization):
+    def create_final_values(service_history, immunization):
         combined_entries = ServiceHistoryClient.process_immunization(
             immunization
         ) + ServiceHistoryClient.process_service_history(service_history)

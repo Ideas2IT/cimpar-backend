@@ -178,8 +178,12 @@ class AppointmentClient:
                 and current_allergy.status_code == 404
             ):
                 logger.info("No Record Found")
+                error_response_data = {
+                "error": "Unable to retrieve datas",
+                "details": str(e),
+                }
                 return JSONResponse(
-                    content={"error": "Unable to retry"},
+                    content=error_response_data,
                     status_code=status.HTTP_404_NOT_FOUND,
                 )
             return {

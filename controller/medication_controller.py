@@ -9,7 +9,7 @@ from services.aidbox_service import AidboxApi
 from services.aidbox_resource_wrapper import MedicationRequest
 from services.aidbox_resource_wrapper import MedicationStatement
 from models.medication_validation import MedicationCreateModel, MedicationUpdateModel
-from constants import PATIENT_REFERENCE, INTEND, CURRENT_MEDICATION, OTHER_MEDICATION
+from constants import PATIENT_REFERENCE, INTEND, CURRENT, OTHER
 
 
 logger = logging.getLogger("log")
@@ -33,7 +33,7 @@ class MedicationClient:
             ),
             subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
             status=current_status,
-            note=[Annotation(text=CURRENT_MEDICATION)],
+            note=[Annotation(text=CURRENT)],
         )
 
     @staticmethod
@@ -54,7 +54,7 @@ class MedicationClient:
             subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
             status=history_status,
             intent=INTEND,
-            note=[Annotation(text=OTHER_MEDICATION)],
+            note=[Annotation(text=OTHER)],
         )
 
     @staticmethod
@@ -154,7 +154,7 @@ class MedicationClient:
                     subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                     status=history_status,
                     intent=INTEND,
-                    note=[Annotation(text=OTHER_MEDICATION)],
+                    note=[Annotation(text=OTHER)],
                 )
                 medication_request.save()
                 result["medication_request_created_id"] = medication_request.id
@@ -190,7 +190,7 @@ class MedicationClient:
                     ),
                     subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                     status=current_status,
-                    note=[Annotation(text=CURRENT_MEDICATION)],
+                    note=[Annotation(text=CURRENT)],
                 )
                 create_med_statement.save()
                 result["medication_statement_created_id"] = create_med_statement.id

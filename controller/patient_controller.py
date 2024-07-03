@@ -10,9 +10,8 @@ from constants import (
     PHONE_SYSTEM,
     EMAIL_SYSTEM,
     RACE_URL,
-    RACE_TEXT,
-    RACE_SYSTEM,
-    RACE_CODE,
+    TEXT,
+    SYSTEM,
     ETHNICITY_URL,
     PATIENT_META_URL,
     IDENTIFIER_SYSTEM,
@@ -81,11 +80,10 @@ class PatientClient:
                     url=RACE_URL,
                     extension=[
                         Extension(
-                            url=RACE_TEXT,
+                            url=TEXT,
                             valueString = pat.race,
                             valueCoding=Coding(
-                                system=RACE_SYSTEM,
-                                code=RACE_CODE,
+                                system=SYSTEM,
                                 display=pat.race,
                             ),
                         )
@@ -94,11 +92,10 @@ class PatientClient:
                         url=ETHNICITY_URL,
                         extension=[
                             Extension(
-                                url=RACE_TEXT,
+                                url=TEXT,
                                 valueString = pat.ethnicity,
                                 valueCoding=Coding(
-                                    system=RACE_SYSTEM,
-                                    code=RACE_CODE,
+                                    system=SYSTEM,
                                     display=pat.ethnicity,
                                 ),
                             )
@@ -210,11 +207,10 @@ class PatientClient:
                     url=RACE_URL,
                     extension=[
                         Extension(
-                            url=RACE_TEXT,
+                            url=TEXT,
                             valueString = pat.race,
                             valueCoding=Coding(
-                                system=RACE_SYSTEM,
-                                code=RACE_CODE,
+                                system=SYSTEM,
                                 display=pat.race,
                             ),
                         )
@@ -223,11 +219,10 @@ class PatientClient:
                         url=ETHNICITY_URL,
                         extension=[
                             Extension(
-                                url=RACE_TEXT,
+                                url=TEXT,
                                 valueString = pat.ethnicity,
                                 valueCoding=Coding(
-                                    system=RACE_SYSTEM,
-                                    code=RACE_CODE,
+                                    system=SYSTEM,
                                     display=pat.ethnicity,
                                 ),
                             )
