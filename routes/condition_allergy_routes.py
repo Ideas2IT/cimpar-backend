@@ -36,7 +36,7 @@ async def update_condition_allergy(patient_id: str, condition: ConditionUpdateMo
     return response
 
 
-@router.get("/condition_allergy/{allergy_name}")
+@router.get("/master/condition_allergy/{allergy_name}")
 @permission_required("CONDITION", "READ")
 async def get_allergy_list(allergy_name: str, request: Request):
     if len(allergy_name) <= 2:

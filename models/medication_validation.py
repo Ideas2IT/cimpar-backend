@@ -1,4 +1,5 @@
 from typing import List
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -22,6 +23,6 @@ class MedicationUpdateModel(BaseModel):
     statement: List[Concept]
     request_approved: bool
     statement_approved: bool
-    request_id: str
-    statement_id: str
+    request_id: Optional[str] = None
+    statement_id: Optional[str] = None
 

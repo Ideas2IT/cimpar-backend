@@ -42,9 +42,11 @@ class PatientModel(BaseModel):
     full_address: str
     state: str
     country: str
+    race: str
+    ethnicity: str
     email: EmailStr
-    height: float
-    weight: float
+    height: str
+    weight: str
     _validate_first_name = validator('first_name', allow_reuse=True)(validate_name)
     _validate_middle_name = validator('middle_name', allow_reuse=True)(validate_name)
     _validate_last_name = validator('last_name', allow_reuse=True)(validate_name)
@@ -70,6 +72,8 @@ class PatientUpdateModel(BaseModel):
     full_address: str
     state: str
     country: str
+    race: str
+    ethnicity: str
     email: EmailStr
     height: float
     weight: float

@@ -108,4 +108,29 @@ class HL7ImmunizationClient:
                 status_code=status.HTTP_400_BAD_REQUEST
             )
         
+    @staticmethod
+    def get_immunizations_by_medication_name(name: str):
+        try:
+            response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization/?.vaccineCode.coding.0.display$contains={name}")
+            immunizations = response_immunization.json()
+            if immunizations.get('total', 0) == 0:
+                logger.info(f"No Immunization found for name: {name}")
+                return JSONResponse(
+                    content={"error": "No Immunization found for patient"},
+                    status_code=status.HTTP_404_NOT_FOUND
+                )
+            return {"immunizations": immunizations}
+        except Exception as e:
+            logger.error(f"Unable to get immunization data: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to retrieve Immunization",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
     

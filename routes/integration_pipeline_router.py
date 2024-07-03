@@ -69,3 +69,10 @@ async def get_immunizations_id(patient_id: str, immunization_id: str, request: R
 async def get_all_immunizations(request: Request):
     logger.info("Get all immunizations")
     return HL7ImmunizationClient.get_all_immunizations()
+
+
+@router.get("/immunization/{medication_name}")
+@permission_required("IMMUNIZATION", "READ")
+async def get_immunizations_by_medication_name(name: str, request: Request):
+    logger.info(f"Immunization name: {name}")
+    return HL7ImmunizationClient.get_immunizations_by_medication_name(name)
