@@ -3,19 +3,20 @@ import traceback
 from fastapi import Response, status, HTTPException
 from fastapi.responses import JSONResponse
 
-from aidbox.base import HumanName, Address, ContactPoint
-from aidbox.resource.patient import Patient_Contact
+from aidbox.base import HumanName, Address, ContactPoint, Extension, Coding, Meta, Identifier, CodeableConcept
+from aidbox.resource.patient import Patient_Contact, Patient_Communication
 
 from constants import (
     PHONE_SYSTEM,
     EMAIL_SYSTEM,
     RACE_URL,
+    RACE_TEXT,
+    RACE_SYSTEM,
+    RACE_CODE,
     ETHNICITY_URL,
-    PATIENT_EXTENTION_URL,
-    EXTENTION_SYSTEM,
-    EXTENTION_CODE,
-    HEIGHT_URL,
-    WEIGHT_URL
+    PATIENT_META_URL,
+    IDENTIFIER_SYSTEM,
+    IDENTIFIER_VALUE
 )
 from models.patient_validation import PatientModel, PatientUpdateModel
 from HL7v2 import get_unique_patient_id_json, get_md5
@@ -56,6 +57,7 @@ class PatientClient:
                         family=pat.last_name, given=[pat.first_name, pat.middle_name]
                     )
                 ],
+                identifier=[Identifier(system=IDENTIFIER_SYSTEM, value=IDENTIFIER_VALUE)],
                 gender=pat.gender,
                 birthDate=pat.date_of_birth,
                 contact=[
@@ -74,7 +76,39 @@ class PatientClient:
                         state=pat.state,
                         country=pat.country,
                     )
-                ]
+                ],
+                extension=[Extension(
+                    url=RACE_URL,
+                    extension=[
+                        Extension(
+                            url=RACE_TEXT,
+                            valueString = pat.race,
+                            valueCoding=Coding(
+                                system=RACE_SYSTEM,
+                                code=RACE_CODE,
+                                display=pat.race,
+                            ),
+                        )
+                        ],
+                    ),Extension(
+                        url=ETHNICITY_URL,
+                        extension=[
+                            Extension(
+                                url=RACE_TEXT,
+                                valueString = pat.ethnicity,
+                                valueCoding=Coding(
+                                    system=RACE_SYSTEM,
+                                    code=RACE_CODE,
+                                    display=pat.ethnicity,
+                                ),
+                            )
+                        ],
+                    )
+                ],
+                communication=[Patient_Communication(language=CodeableConcept(coding=[Coding(system=PATIENT_META_URL, code=pat.height, display=pat.weight)]))]
+            )
+            patient.meta = Meta(
+                profile = [PATIENT_META_URL]
             )
             patient.save()
             logger.debug("Patient saved successfully")
@@ -162,6 +196,7 @@ class PatientClient:
                         ]
                     )
                 ],
+                identifier=[Identifier(system=IDENTIFIER_SYSTEM, value=IDENTIFIER_VALUE)],
                 address=[
                     Address(
                         city=pat.city,
@@ -171,6 +206,38 @@ class PatientClient:
                         country=pat.country,
                     )
                 ],
+                extension=[Extension(
+                    url=RACE_URL,
+                    extension=[
+                        Extension(
+                            url=RACE_TEXT,
+                            valueString = pat.race,
+                            valueCoding=Coding(
+                                system=RACE_SYSTEM,
+                                code=RACE_CODE,
+                                display=pat.race,
+                            ),
+                        )
+                        ],
+                    ),Extension(
+                        url=ETHNICITY_URL,
+                        extension=[
+                            Extension(
+                                url=RACE_TEXT,
+                                valueString = pat.ethnicity,
+                                valueCoding=Coding(
+                                    system=RACE_SYSTEM,
+                                    code=RACE_CODE,
+                                    display=pat.ethnicity,
+                                ),
+                            )
+                        ],
+                    )
+                ],
+                communication=[Patient_Communication(language=CodeableConcept(coding=[Coding(system=PATIENT_META_URL, code=pat.height, display=pat.weight)]))]
+            )
+            patient.meta = Meta(
+                profile = [PATIENT_META_URL]
             )
             patient.save()
             response_data = {"id": patient.id, "Updated": True}
@@ -267,6 +334,31 @@ class PatientClient:
             extracted_data["email"] = None
             extracted_data["phoneNo"] = None
 
+        # Extract race and ethnicity from extensions
+        if patient.extension:
+            for extension in patient.extension:
+                if extension.url == "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race":
+                    for inner_extension in extension.extension:
+                        if inner_extension.url == "text":
+                            extracted_data["race"] = inner_extension.valueString
+                elif extension.url == "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity":
+                    for inner_extension in extension.extension:
+                        if inner_extension.url == "text":
+                            extracted_data["ethnicity"] = inner_extension.valueString
+        else:
+            extracted_data["race"] = None
+            extracted_data["ethnicity"] = None
+
+        # Extract Height and Weight from extensions
+        if patient.communication:
+            for communication in patient.communication:
+                for coding in communication.language.coding:
+                    extracted_data["height"] = coding.code
+                    extracted_data["weight"] = coding.display
+        else:
+            extracted_data["height"] = None
+            extracted_data["weight"] = None            
+
         # Extract lastUpdated timestamp
         extracted_data["lastUpdated"] = patient.meta.lastUpdated
 
@@ -284,6 +376,10 @@ class PatientClient:
             "state",
             "email",
             "phoneNo",
+            "race",
+            "ethnicity",
+            "height",
+            "weight",
             "lastUpdated",
         ]
         for field in default_fields:

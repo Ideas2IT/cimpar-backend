@@ -1,5 +1,10 @@
-from pydantic import BaseModel
+import re
+from pydantic import BaseModel, validator
 
+def validate_phone_number(phone_number: str) -> str:
+    if not re.match(r'^\+1\d{10}$', phone_number):
+        raise ValueError('Phone number must be in the format +1 followed by 10 digits')
+    return phone_number
 
 class EncounterModel(BaseModel):
     location: str 
@@ -10,8 +15,9 @@ class EncounterModel(BaseModel):
     primary_care_team: str
     treatment_summary: str
     follow_up_care: str
-    status: str
-    class_code: str
+    activity_notes: str
+    _validate_phone_number = validator('phone_number', allow_reuse=True)(validate_phone_number)
+
 
 
 class EncounterUpdateModel(BaseModel):
@@ -22,7 +28,9 @@ class EncounterUpdateModel(BaseModel):
     reason: str
     primary_care_team: str
     treatment_summary: str
-    status: str
-    class_code: str
+    follow_up_care: str
+    activity_notes: str
+    _validate_phone_number = validator('phone_number', allow_reuse=True)(validate_phone_number)
+
     
 
