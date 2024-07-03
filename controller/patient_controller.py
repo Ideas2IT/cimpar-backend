@@ -6,7 +6,17 @@ from fastapi.responses import JSONResponse
 from aidbox.base import HumanName, Address, ContactPoint
 from aidbox.resource.patient import Patient_Contact
 
-from constants import PHONE_SYSTEM, EMAIL_SYSTEM
+from constants import (
+    PHONE_SYSTEM,
+    EMAIL_SYSTEM,
+    RACE_URL,
+    ETHNICITY_URL,
+    PATIENT_EXTENTION_URL,
+    EXTENTION_SYSTEM,
+    EXTENTION_CODE,
+    HEIGHT_URL,
+    WEIGHT_URL
+)
 from models.patient_validation import PatientModel, PatientUpdateModel
 from HL7v2 import get_unique_patient_id_json, get_md5
 from controller.auth_controller import AuthClient
@@ -21,18 +31,22 @@ class PatientClient:
     @staticmethod
     def create_patient(pat: PatientModel):
         try:
-            patient_id = get_unique_patient_id_json(pat.first_name, pat.last_name,
-                                                    pat.date_of_birth)
+            patient_id = get_unique_patient_id_json(
+                pat.first_name, pat.last_name, pat.date_of_birth
+            )
             # As this is open API, and we won't get Token here, so using default AIDBOX API.
             from aidbox.resource.patient import Patient
+
             #####
 
-            patient_id_update = get_md5([pat.first_name, pat.last_name, pat.date_of_birth])
+            patient_id_update = get_md5(
+                [pat.first_name, pat.last_name, pat.date_of_birth]
+            )
 
             if Patient.get({"id": patient_id_update}):
                 return HTTPException(
                     detail=f"Error: Patient with id {patient_id_update} already exists",
-                    status_code=status.HTTP_400_BAD_REQUEST
+                    status_code=status.HTTP_400_BAD_REQUEST,
                 )
 
             patient = Patient(
@@ -60,7 +74,7 @@ class PatientClient:
                         state=pat.state,
                         country=pat.country,
                     )
-                ],
+                ]
             )
             patient.save()
             logger.debug("Patient saved successfully")
@@ -79,8 +93,7 @@ class PatientClient:
             }
 
             return JSONResponse(
-                content=error_response_data,
-                status_code=status.HTTP_400_BAD_REQUEST
+                content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
@@ -104,8 +117,7 @@ class PatientClient:
             }
 
             return JSONResponse(
-                content=error_response_data,
-                status_code=status.HTTP_400_BAD_REQUEST
+                content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
@@ -127,10 +139,9 @@ class PatientClient:
             }
 
             return JSONResponse(
-                content=error_response_data,
-                status_code=status.HTTP_400_BAD_REQUEST
+                content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
-        
+
     @staticmethod
     def update_patient_by_id(pat: PatientUpdateModel, patient_id: str):
         try:
@@ -174,8 +185,7 @@ class PatientClient:
             }
 
             return JSONResponse(
-                content=error_response_data,
-                status_code=status.HTTP_400_BAD_REQUEST
+                content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
@@ -198,8 +208,7 @@ class PatientClient:
             }
 
             return JSONResponse(
-                content=error_response_data,
-                status_code=status.HTTP_400_BAD_REQUEST
+                content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
@@ -207,10 +216,10 @@ class PatientClient:
         extracted_data = {}
 
         # Extract id
-        extracted_data['id'] = patient.id
+        extracted_data["id"] = patient.id
 
         # Extract birthDate and convert to timestamp
-        extracted_data['dob'] = patient.birthDate
+        extracted_data["dob"] = patient.birthDate
         # extracted_data['dob'] = None
         # if patient.birthDate:
         #     # Convert birthDate to Unix timestamp (milliseconds)
@@ -218,53 +227,67 @@ class PatientClient:
 
         # Extract name components
         if patient.name:
-            extracted_data['firstName'] = patient.name[0].given[0] if patient.name[0].given else None
-            extracted_data['middleName'] = patient.name[0].given[1] if len(patient.name[0].given) > 1 else None
-            extracted_data['lastName'] = patient.name[0].family
+            extracted_data["firstName"] = (
+                patient.name[0].given[0] if patient.name[0].given else None
+            )
+            extracted_data["middleName"] = (
+                patient.name[0].given[1] if len(patient.name[0].given) > 1 else None
+            )
+            extracted_data["lastName"] = patient.name[0].family
         else:
-            extracted_data['firstName'] = None
-            extracted_data['middleName'] = None
-            extracted_data['lastName'] = None
+            extracted_data["firstName"] = None
+            extracted_data["middleName"] = None
+            extracted_data["lastName"] = None
 
         # Extract gender
-        extracted_data['gender'] = patient.gender
+        extracted_data["gender"] = patient.gender
 
         # Extract address components
         if patient.address:
-            extracted_data['address'] = patient.address[0].text
-            extracted_data['zipCode'] = patient.address[0].postalCode
-            extracted_data['city'] = patient.address[0].city
-            extracted_data['country'] = patient.address[0].country
-            extracted_data['state'] = patient.address[0].state
+            extracted_data["address"] = patient.address[0].text
+            extracted_data["zipCode"] = patient.address[0].postalCode
+            extracted_data["city"] = patient.address[0].city
+            extracted_data["country"] = patient.address[0].country
+            extracted_data["state"] = patient.address[0].state
         else:
-            extracted_data['address'] = None
-            extracted_data['zipCode'] = None
-            extracted_data['city'] = None
-            extracted_data['country'] = None
-            extracted_data['state'] = None
+            extracted_data["address"] = None
+            extracted_data["zipCode"] = None
+            extracted_data["city"] = None
+            extracted_data["country"] = None
+            extracted_data["state"] = None
 
         # Extract email and phoneNo from contact information
         if patient.contact:
             for telecom in patient.contact[0].telecom:
-                if telecom.system == 'email':
-                    extracted_data['email'] = telecom.value
-                elif telecom.system == 'phone':
-                    extracted_data['phoneNo'] = telecom.value
+                if telecom.system == "email":
+                    extracted_data["email"] = telecom.value
+                elif telecom.system == "phone":
+                    extracted_data["phoneNo"] = telecom.value
         else:
-            extracted_data['email'] = None
-            extracted_data['phoneNo'] = None
+            extracted_data["email"] = None
+            extracted_data["phoneNo"] = None
 
         # Extract lastUpdated timestamp
-        extracted_data['lastUpdated'] = patient.meta.lastUpdated
+        extracted_data["lastUpdated"] = patient.meta.lastUpdated
 
         # Handle missing fields by defaulting to None
         default_fields = [
-            'dob', 'firstName', 'middleName', 'lastName', 'gender', 'address', 'zipCode',
-            'city', 'country', 'state', 'email', 'phoneNo', 'lastUpdated'
+            "dob",
+            "firstName",
+            "middleName",
+            "lastName",
+            "gender",
+            "address",
+            "zipCode",
+            "city",
+            "country",
+            "state",
+            "email",
+            "phoneNo",
+            "lastUpdated",
         ]
         for field in default_fields:
             if extracted_data.get(field) is None:
                 extracted_data[field] = None
 
         return extracted_data
-

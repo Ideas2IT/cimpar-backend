@@ -229,7 +229,7 @@ class AuthClient:
             if datetime.now(timezone.utc) - last_update < timedelta(hours=24):
                 raise Exception("Password reset can only be requested 24 hours after the last user update/change")
             # Check for existing valid reset token
-            token_response = API.make_request(method="GET", endpoint=f"/UserToken/?.user_id={user_json["id"]}")
+            token_response = API.make_request(method="GET", endpoint=f"/UserToken/?.user_id={user_json['id']}")
             if token_response.json()["total"] != 0:
                 token_entry = token_response.json()["entry"][0]["resource"]
                 token_expiration = datetime.fromisoformat(token_entry['token_expiration'][:-1]).replace(

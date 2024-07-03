@@ -1,6 +1,6 @@
 import logging
 import traceback
-from fastapi import Response, status
+from fastapi import status
 from fastapi.responses import JSONResponse
 
 from aidbox.base import Period,  CodeableConcept, Reference, Coding
@@ -158,7 +158,7 @@ class EncounterClient:
             if encounters:
                 logger.info(f"Encounters Found {len(encounters)}")
                 return encounters
-            return Response(
+            return JSONResponse(
                 content={"Error retrieving encounters"}, status_code=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
@@ -174,26 +174,62 @@ class EncounterClient:
                 status_code=status.HTTP_400_BAD_REQUEST
             )
 
+    # @staticmethod
+    # def delete_by_encounter_id(patient_id: str, encounter_id: str):
+    #     try:
+    #         encounter = Encounter.make_request(method="GET", endpoint=f"/fhir/Encounter/{encounter_id}?subject=Patient/{patient_id}")
+    #         existing_encounter = encounter.json()
+    #         if encounter.status_code == 404:
+    #             logger.info(f"Encounter Not Found: {encounter_id}")
+    #             return JSONResponse(
+    #                 content={"error": "Patient you have provided was not matched with visit history"},
+    #                 status_code=status.HTTP_404_NOT_FOUND
+    #             )
+    #         if existing_encounter.get("subject", {}).get("reference") == f"Patient/{patient_id}" and existing_encounter.get('id') == encounter_id:
+    #             print(existing_encounter)
+    #             print("type", type(existing_encounter))
+    #             delete_data = Encounter(**existing_encounter)
+    #             delete_data.delete()
+    #             return {"deleted": True, "encounter": encounter_id}
+    #         return JSONResponse(
+    #         content={"error": "patient you have provided was not matched with visit history"},
+    #         status_code=status.HTTP_404_NOT_FOUND
+    #         )
+    
+    #     except Exception as e:
+    #         logger.error(f"Unable to delete encounter: {str(e)}")
+    #         logger.error(traceback.format_exc())
+    #         error_response_data = {
+    #             "error": "Unable to delete visit history",
+    #             "details": str(e),
+    #         }
+    
+    #         return JSONResponse(
+    #             content=error_response_data,
+    #             status_code=status.HTTP_400_BAD_REQUEST
+    #         )
+
     @staticmethod
-    def delete_by_encounter_id(patient_id: str, encounter_id: str):
+    def delete_by_patient_id(patient_id: str, encounter_id: str):
         try:
-            encounter = Encounter.make_request(method="GET", endpoint=f"/fhir/Encounter/{encounter_id}?subject=Patient/{patient_id}")
-            existing_encounter = encounter.json()
-            if encounter.status_code == 404:
-                logger.info(f"Encounter Not Found: {encounter_id}")
+            encounter = Encounter.make_request(method="GET", endpoint=f"/fhir/Encounter/?subject=Patient/{patient_id}")
+            print(encounter.json())
+            existing_encounter = encounter.json() if encounter else {}
+            if existing_encounter.get("total", 0) > 0:
+                for item in existing_encounter["entry"]:
+                    if item['resource']['id'] == encounter_id:
+                        print(item)
+                        delete_data = Encounter(**item["resource"])
+                        delete_data.delete()
+                return {"deleted": True, "encounter": encounter.json()}
+            else:
+                error_response_data = {
+                    "error": "No visit history for this patient"
+                }
                 return JSONResponse(
-                    content={"error": "Patient you have provided was not matched with visit history"},
-                    status_code=status.HTTP_404_NOT_FOUND
+                    content=error_response_data,
+                    status_code=status.HTTP_400_BAD_REQUEST
                 )
-            if existing_encounter.get("subject", {}).get("reference") == f"Patient/{patient_id}" and existing_encounter.get('id') == encounter_id:
-                delete_data = Encounter(**existing_encounter)
-                delete_data.delete()
-                return {"deleted": True, "encounter": encounter_id}
-            return JSONResponse(
-            content={"error": "patient you have provided was not matched with visit history"},
-            status_code=status.HTTP_404_NOT_FOUND
-            ) 
-            
         except Exception as e:
             logger.error(f"Unable to delete encounter: {str(e)}")
             logger.error(traceback.format_exc())

@@ -47,9 +47,15 @@ async def update_encounter(patient_id: str, encounter_id: str, encounter: Encoun
     return EncounterClient.update_by_patient_id(patient_id, encounter_id, encounter)
 
 
+# @router.delete("/encounter/{patient_id}/{encounter_id}")
+# @permission_required("ENCOUNTER", "DELETE")
+# async def delete_encounter(patient_id: str, encounter_id: str, request: Request):
+#     logger.info(f"Deleting encounter ID:{patient_id}")
+#     return EncounterClient.delete_by_encounter_id(patient_id, encounter_id)
+
+
 @router.delete("/encounter/{patient_id}/{encounter_id}")
 @permission_required("ENCOUNTER", "DELETE")
-async def delete_encounter(patient_id: str, encounter_id: str, request: Request):
+async def delete_encounter(patient_id: str, encounter_id:str, request: Request):
     logger.info(f"Deleting encounter ID:{patient_id}")
-    return EncounterClient.delete_by_encounter_id(patient_id, encounter_id)
-
+    return EncounterClient.delete_by_patient_id(patient_id, encounter_id)

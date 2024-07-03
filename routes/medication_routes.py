@@ -25,7 +25,7 @@ async def get_medication_by_patient_id(patient_id: str, request: Request):
 
 
 @router.put("/medication/{patient_id}")
-@permission_required("MEDICATION", "EDIT")
+@permission_required("MEDICATION", "UPDATE")
 async def update_medication(updated_medication: MedicationUpdateModel, patient_id: str, request: Request):
     logger.info(f"Updated Medication: {updated_medication}")
     return MedicationClient.update_medication_by_patient_id(patient_id, updated_medication)
