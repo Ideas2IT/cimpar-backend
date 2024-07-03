@@ -246,6 +246,8 @@ class EncounterClient:
                     status_code=status.HTTP_404_NOT_FOUND
                 )
             if existing_encounter.get("subject", {}).get("reference") == f"Patient/{patient_id}" and existing_encounter.get('id') == encounter_id:
+                print(existing_encounter)
+                print("type", type(existing_encounter))
                 delete_data = Encounter(**existing_encounter)
                 delete_data.delete()
                 return {"deleted": True, "encounter": encounter_id}
