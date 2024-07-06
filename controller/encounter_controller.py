@@ -242,15 +242,16 @@ class EncounterClient:
             if encounter.status_code == 404:
                 logger.info(f"Encounter Not Found: {encounter_id}")
                 return JSONResponse(
-                    content={"error": "Patient you have provided was not matched with visit history"},
+                    content={"error": "Patient provided was not matched with visit history"},
                     status_code=status.HTTP_404_NOT_FOUND
                 )
             if existing_encounter.get("subject", {}).get("reference") == f"Patient/{patient_id}" and existing_encounter.get('id') == encounter_id:
+                existing_encounter['class_'] = existing_encounter.pop('class')
                 delete_data = Encounter(**existing_encounter)
                 delete_data.delete()
                 return {"deleted": True, "encounter": encounter_id}
             return JSONResponse(
-            content={"error": "patient you have provided was not matched with visit history"},
+            content={"error": "patient provided was not matched with visit history"},
             status_code=status.HTTP_404_NOT_FOUND
             )
     
