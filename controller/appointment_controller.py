@@ -3,17 +3,17 @@ import traceback
 from fastapi import status
 from fastapi.responses import JSONResponse
 
-from aidbox.base import CodeableConcept, Reference, Coding
+from aidbox.base import CodeableConcept, Reference, Coding, Annotation
 from aidbox.resource.appointment import Appointment_Participant
 
-from constants import PATIENT_REFERENCE, INTEND, STATUS
+from constants import PATIENT_REFERENCE, INTEND, STATUS, APPOINTMENT_STATUS, PARTICIPANT_STATUS,CURRENT, OTHER
 from services.aidbox_resource_wrapper import Appointment
 from models.appointment_validation import AppoinmentModel
 from controller.patient_controller import PatientClient
 from services.aidbox_resource_wrapper import MedicationRequest
 from services.aidbox_resource_wrapper import AllergyIntolerance
 from services.aidbox_resource_wrapper import MedicationStatement
-
+from services.aidbox_resource_wrapper import Condition
 
 logger = logging.getLogger("log")
 
@@ -24,7 +24,7 @@ class AppointmentClient:
         try:
             response_data = {}
             appointment = Appointment(
-                status=app.status,
+                status=APPOINTMENT_STATUS,
                 description=app.other_reason,
                 reasonCode=[
                     CodeableConcept(
@@ -34,14 +34,14 @@ class AppointmentClient:
                                 code=concept.code,
                                 display=concept.display,
                             )
-                            for concept in app.current_medication
+                            for concept in app.current_medical_condition
                         ]
                     ),
                 ],
                 participant=[
                     Appointment_Participant(
                         actor=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
-                        status=app.participant_status,
+                        status=PARTICIPANT_STATUS,
                     )
                 ],
                 start=app.date_of_appoinment,
@@ -51,26 +51,26 @@ class AppointmentClient:
             appointment.save()
             response_data["appointment_id"] = appointment.id if appointment else None
 
-            if app.current_medication:
-                medication_statement = MedicationStatement(
-                    status=STATUS,
-                    medicationCodeableConcept=CodeableConcept(
+            if app.current_medical_condition:
+                current_condition = Condition(
+                    code=CodeableConcept(
                         coding=[
                             Coding(
                                 system=concept.system,
                                 code=concept.code,
                                 display=concept.display,
                             )
-                            for concept in app.current_medication
+                            for concept in app.current_medical_condition
                         ]
                     ),
                     subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+                    note=[Annotation(text=CURRENT)],
                 )
-                medication_statement.save()
-                response_data["current_medication_id"] = medication_statement.id if medication_statement else None
+                current_condition.save()
+                response_data["current_medication_id"] = current_condition.id if current_condition else None
 
 
-            if app.other_medication:
+            if app.other_medical_condition:
                 medication_request = MedicationRequest(
                     medicationCodeableConcept=CodeableConcept(
                         coding=[
@@ -79,12 +79,13 @@ class AppointmentClient:
                                 code=concept.code,
                                 display=concept.display,
                             )
-                            for concept in app.other_medication
+                            for concept in app.other_medical_condition
                         ]
                     ),
                     subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                     status=STATUS,
                     intent=INTEND,
+                    note=[Annotation(text=OTHER)],
                 )
                 medication_request.save()
                 response_data["other_medication_id"] = medication_request.id if medication_request else None
@@ -103,9 +104,29 @@ class AppointmentClient:
                         ]
                     ),
                     patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+                    note=[Annotation(text=CURRENT)],
                 )
                 current_allergy.save()
                 response_data["current_allergy"] = current_allergy.id if current_allergy else None
+
+            if app.other_allergy:
+                other_allergy = AllergyIntolerance(
+                    code=CodeableConcept(
+                        coding=[
+                            Coding(
+                                system=concept.system,
+                                code=concept.code,
+                                display=concept.display,
+                            )
+                            for concept in app.other_allergy
+                        ]
+                    ),
+                    patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+                    note=[Annotation(text=OTHER)],
+                )
+                other_allergy.save()
+                response_data["other_allergy"] = other_allergy.id if other_allergy else None
+
             response_data["created"] = True
 
             logger.info(f"Added Successfully in DB: {response_data}")
