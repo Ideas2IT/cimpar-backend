@@ -7,13 +7,13 @@ class Concept(BaseModel):
     display: str
 
 class AppoinmentModel(BaseModel):
-    status: str
-    participant_status: str
     test_to_take: List[Concept]
     date_of_appoinment: str
     schedule_time: str
     reason_for_test: str
-    other_reason: str
-    current_medication: Optional[List[Concept]] = None
-    other_medication: Optional[List[Concept]] = None
+    other_reason: Optional[str] = None
+    current_medical_condition: Optional[List[Concept]] = None
+    other_medical_condition: Optional[List[Concept]] = None
     current_allergy: Optional[List[Concept]] = None
+    other_allergy: Optional[List[Concept]] = None
+    
