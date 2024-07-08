@@ -8,7 +8,7 @@ class Concept(BaseModel):
 
 class AppoinmentModel(BaseModel):
     test_to_take: List[Concept]
-    date_of_appoinment: str
+    date_of_appointment: str
     schedule_time: str
     reason_for_test: str
     other_reason: Optional[str] = None
