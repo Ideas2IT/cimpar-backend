@@ -39,3 +39,14 @@ async def get_medications_list(medication_name: str, request: Request):
         return None
     logger.info(f"Medication Name:{medication_name}")
     return MedicationClient.get_medications(medication_name)
+
+
+@router.get("/master/medical_condition/{medical_condition}")
+@permission_required("MEDICATION", "READ")
+async def get_medical_condition(medical_condition: str, request: Request):
+    if len(medical_condition) <= 2:
+        logger.info("Medical condition must be at least 2 characters long.")
+        return None
+    logger.info(f"Medical Condition: {medical_condition}")
+    return MedicationClient.get_medical_condition(medical_condition)
+

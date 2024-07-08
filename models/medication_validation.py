@@ -10,17 +10,15 @@ class Concept(BaseModel):
 
 
 class MedicationCreateModel(BaseModel):
-    request: List[Concept]
-    statement: List[Concept]
+    request: Optional[List[Concept]] = None
+    statement: Optional[List[Concept]] = None
     request_approved: bool
     statement_approved: bool
-    family_medications: str
-    family_status: str
 
 
 class MedicationUpdateModel(BaseModel):
-    request: List[Concept]
-    statement: List[Concept]
+    request: Optional[List[Concept]] = None
+    statement: Optional[List[Concept]] = None
     request_approved: bool
     statement_approved: bool
     request_id: Optional[str] = None
