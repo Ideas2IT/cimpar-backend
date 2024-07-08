@@ -26,18 +26,6 @@ class AppointmentClient:
             appointment = Appointment(
                 status=APPOINTMENT_STATUS,
                 description=app.other_reason,
-                reasonCode=[
-                    CodeableConcept(
-                        coding=[
-                            Coding(
-                                system=concept.system,
-                                code=concept.code,
-                                display=concept.display,
-                            )
-                            for concept in app.current_medical_condition
-                        ]
-                    ),
-                ],
                 participant=[
                     Appointment_Participant(
                         actor=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
