@@ -30,7 +30,7 @@ from routes import (insurance_routes, integration_pipeline_router, authenticatio
 # Load settings
 app = FastAPI(docs_url=None)
 
-CIMPAR_BE_VERSION = "1.0.4"
+CIMPAR_BE_VERSION = "1.0.5"
 
 # Configure CORS
 origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
