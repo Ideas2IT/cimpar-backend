@@ -22,7 +22,7 @@ from HL7v2 import get_unique_patient_id_json, get_md5
 from controller.auth_controller import AuthClient
 from models.auth_validation import UserModel, User
 from services.aidbox_resource_wrapper import Patient
-
+from services.aidbox_service import AidboxApi
 
 logger = logging.getLogger("log")
 
@@ -32,7 +32,7 @@ class PatientClient:
     def create_patient(pat: PatientModel):
         try:
             patient_id = get_unique_patient_id_json(
-                pat.first_name, pat.last_name, pat.date_of_birth
+                pat.firstName, pat.middleName, pat.dob
             )
             # As this is open API, and we won't get Token here, so using default AIDBOX API.
             from aidbox.resource.patient import Patient
@@ -40,7 +40,7 @@ class PatientClient:
             #####
 
             patient_id_update = get_md5(
-                [pat.first_name, pat.last_name, pat.date_of_birth]
+                [pat.firstName, pat.middleName, pat.dob]
             )
 
             if Patient.get({"id": patient_id_update}):
@@ -53,25 +53,25 @@ class PatientClient:
                 id=patient_id,
                 name=[
                     HumanName(
-                        family=pat.last_name, given=[pat.first_name, pat.middle_name]
+                        family=pat.dob, given=[pat.firstName, pat.middleName]
                     )
                 ],
                 identifier=[Identifier(system=IDENTIFIER_SYSTEM, value=IDENTIFIER_VALUE)],
-                gender=pat.gender,
-                birthDate=pat.date_of_birth,
+                gender=pat.gender.lower(),
+                birthDate=pat.dob,
                 contact=[
                     Patient_Contact(
                         telecom=[
-                            ContactPoint(system=PHONE_SYSTEM, value=pat.phone_number),
-                            ContactPoint(system=EMAIL_SYSTEM, value=pat.email),
+                            ContactPoint(system=PHONE_SYSTEM, value=pat.regPhoneNo),
+                            ContactPoint(system=EMAIL_SYSTEM, value=pat.regEmail),
                         ]
                     )
                 ],
                 address=[
                     Address(
                         city=pat.city,
-                        postalCode=pat.zip_code,
-                        text=pat.full_address,
+                        postalCode=pat.zipCode,
+                        text=pat.address,
                         state=pat.state,
                         country=pat.country,
                     )
@@ -81,37 +81,38 @@ class PatientClient:
                     extension=[
                         Extension(
                             url=TEXT,
-                            valueString = pat.race,
+                            valueString=pat.race,
                             valueCoding=Coding(
                                 system=SYSTEM,
                                 display=pat.race,
                             ),
                         )
-                        ],
-                    ),Extension(
-                        url=ETHNICITY_URL,
-                        extension=[
-                            Extension(
-                                url=TEXT,
-                                valueString = pat.ethnicity,
-                                valueCoding=Coding(
-                                    system=SYSTEM,
-                                    display=pat.ethnicity,
-                                ),
-                            )
-                        ],
-                    )
+                    ],
+                ), Extension(
+                    url=ETHNICITY_URL,
+                    extension=[
+                        Extension(
+                            url=TEXT,
+                            valueString=pat.ethnicity,
+                            valueCoding=Coding(
+                                system=SYSTEM,
+                                display=pat.ethnicity,
+                            ),
+                        )
+                    ],
+                )
                 ],
-                communication=[Patient_Communication(language=CodeableConcept(coding=[Coding(system=PATIENT_META_URL, code=pat.height, display=pat.weight)]))]
+                communication=[Patient_Communication(language=CodeableConcept(
+                    coding=[Coding(system=PATIENT_META_URL, code=pat.height, display=pat.weight)]))]
             )
             patient.meta = Meta(
-                profile = [PATIENT_META_URL]
+                profile=[PATIENT_META_URL]
             )
             patient.save()
             logger.debug("Patient saved successfully")
             response_data = {"id": patient.id, "created": True}
             if not User.get({"id": patient.id}):
-                user = UserModel(email=pat.email, id=patient.id)
+                user = UserModel(email=pat.regEmail, id=patient.id)
                 response_data = AuthClient.create(user)
             logger.info(f"Added Successfully in DB: {response_data}")
             return response_data
@@ -208,31 +209,32 @@ class PatientClient:
                     extension=[
                         Extension(
                             url=TEXT,
-                            valueString = pat.race,
+                            valueString=pat.race,
                             valueCoding=Coding(
                                 system=SYSTEM,
                                 display=pat.race,
                             ),
                         )
-                        ],
-                    ),Extension(
-                        url=ETHNICITY_URL,
-                        extension=[
-                            Extension(
-                                url=TEXT,
-                                valueString = pat.ethnicity,
-                                valueCoding=Coding(
-                                    system=SYSTEM,
-                                    display=pat.ethnicity,
-                                ),
-                            )
-                        ],
-                    )
+                    ],
+                ), Extension(
+                    url=ETHNICITY_URL,
+                    extension=[
+                        Extension(
+                            url=TEXT,
+                            valueString=pat.ethnicity,
+                            valueCoding=Coding(
+                                system=SYSTEM,
+                                display=pat.ethnicity,
+                            ),
+                        )
+                    ],
+                )
                 ],
-                communication=[Patient_Communication(language=CodeableConcept(coding=[Coding(system=PATIENT_META_URL, code=pat.height, display=pat.weight)]))]
+                communication=[Patient_Communication(language=CodeableConcept(
+                    coding=[Coding(system=PATIENT_META_URL, code=pat.height, display=pat.weight)]))]
             )
             patient.meta = Meta(
-                profile = [PATIENT_META_URL]
+                profile=[PATIENT_META_URL]
             )
             patient.save()
             response_data = {"id": patient.id, "Updated": True}
@@ -352,9 +354,9 @@ class PatientClient:
                     extracted_data["weight"] = coding.display
         else:
             extracted_data["height"] = None
-            extracted_data["weight"] = None            
+            extracted_data["weight"] = None
 
-        # Extract lastUpdated timestamp
+            # Extract lastUpdated timestamp
         extracted_data["lastUpdated"] = patient.meta.lastUpdated
 
         # Handle missing fields by defaulting to None
@@ -382,3 +384,30 @@ class PatientClient:
                 extracted_data[field] = None
 
         return extracted_data
+
+    @staticmethod
+    def get_master_data(table_name: str):
+        table = {"race": "CimparRace", "state": "CimparState", "lab_test": "CimparLabTest",
+                 "ethnicity": "CimparEthnicity"}
+        if table_name not in table:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Kindly, verify the table name.")
+        try:
+            master_values = AidboxApi.make_request(
+                method="GET",
+                endpoint=f"/fhir/{table[table_name]}?_sort=.display"
+            )
+            values = master_values.json()
+            master_value = []
+            for entry in values["entry"]:
+                master_value.append(
+                    {
+                    "id": entry.get("resource", {}).get("id"), 
+                    "code": entry.get("resource", {}).get("code"),
+                    "display": entry.get("resource", {}).get("display")
+                    }
+                )
+            return master_value
+        except Exception as e:
+            return  JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content=f"Failed to fetch data: {str(e)}")

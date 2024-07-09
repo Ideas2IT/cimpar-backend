@@ -52,3 +52,11 @@ async def delete_patient(patient_id: str, request: Request):
 async def get_patient(request: Request):
     logger.info(f"Profile Patient ID:{user_id_context.get(None)}")
     return PatientClient.get_patient_by_id(user_id_context.get(None))
+
+
+@router.get("master/{table_name}")
+@permission_required("PATIENT", "READ")
+async def get_master_value(table_name: str, request: Request):
+    logger.info(f"master table {table_name}")
+    return PatientClient.get_master_data(table_name)
+
