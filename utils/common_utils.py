@@ -113,7 +113,7 @@ def send_email(recipient_email, body):
             },
             "content": {
                 "subject": "Confirm your email address",
-                "plainText": body,
+                "html": body,
             }
         }
         poller = email_client.begin_send(message)

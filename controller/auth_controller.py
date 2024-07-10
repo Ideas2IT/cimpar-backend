@@ -5,6 +5,7 @@ import traceback
 from aidbox.base import API
 from datetime import datetime, timedelta, timezone
 import uuid
+import os
 
 
 from models.auth_validation import (
@@ -45,22 +46,25 @@ class AuthClient:
             role_response.save()
             # Create User Token to set the password
             token = uuid.uuid4()
-            confirm_url = f"/api/confirm/{token}"
             user_token = UserToken(
                 user_id=user_id,
                 token=str(token),
-                token_expiration=(datetime.now(timezone.utc) + timedelta(hours=48)).isoformat() + 'Z',
-                confirm_url=confirm_url
+                token_expiration=(datetime.now(timezone.utc) + timedelta(hours=48)).isoformat() + 'Z'
             )
             user_token.save()
-            email_body = f"Click this link to confirm your email address: {confirm_url}"
+            confirm_link = os.path.join(os.environ.get("SET_PASSWORD_URL"), str(token))
+            with open('templates/email.html', 'r', encoding='utf-8') as file:
+                email_template = file.read()
+            email_body = email_template.replace('{{name}}', user.name).replace(
+                '{{email}}', user.email).replace('{{confirm_link}}', confirm_link)
+
             # Email send
             if not send_email(user.email, email_body):
                 raise Exception("Failed to send confirmation email")
             return {
                 "id": user_id,
                 "email": user.email,
-                "confirm_url": confirm_url,
+                #"token": token,
                 "message": "Signup successful! Check your email to set your password."
             }
         except Exception as e:

@@ -108,10 +108,12 @@ class PatientClient:
                 profile = [PATIENT_META_URL]
             )
             patient.save()
+
             logger.debug("Patient saved successfully")
             response_data = {"id": patient.id, "created": True}
             if not User.get({"id": patient.id}):
-                user = UserModel(email=pat.email, id=patient.id)
+                user = UserModel(email=pat.email, id=patient.id,
+                                 name=pat.first_name + " " + pat.middle_name + " "+ pat.middle_name)
                 response_data = AuthClient.create(user)
             logger.info(f"Added Successfully in DB: {response_data}")
             return response_data

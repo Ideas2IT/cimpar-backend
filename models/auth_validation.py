@@ -5,6 +5,7 @@ from aidbox.base import DomainResource
 class UserModel(BaseModel):
     id: str
     email: str
+    name: str
     password: str = "SecureRandom$2024!"
     role: str = "patient"
 
