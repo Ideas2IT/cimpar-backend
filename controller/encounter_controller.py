@@ -37,7 +37,8 @@ class EncounterClient:
                 subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 reasonCode=[CodeableConcept(text=enc.reason)],
                 participant=[Encounter_Participant(individual=Reference(display=enc.primary_care_team))], 
-                location=[Encounter_Location(location=Reference(display=enc.location))],
+                location=[Encounter_Location(location=Reference(display=enc.phone_number))],
+                serviceProvider=Reference(display=enc.location),
                 serviceType=CodeableConcept(
                         coding=[
                             Coding(

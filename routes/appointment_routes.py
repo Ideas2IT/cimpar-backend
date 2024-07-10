@@ -44,3 +44,17 @@ async def get_by_id(
         other_medication_id,
         allergy_id,
     )
+
+@router.get("/appointment/patient/{appointment_by_name}")
+@permission_required("APPOINTMENT", "READ")
+async def get_by_patient_name(name: str, request: Request):
+    logger.info(f"fetch appointment for {name}")
+    return AppointmentClient.get_by_patient_name(name)
+
+
+@router.get("/appointment/{appointment_by_date}")
+@permission_required("APPOINTMENT", "READ")
+async def get_appointment_by_date(state_date: str, end_date: str, request: Request):
+    logger.info(f"fetch appointment between {state_date} and {end_date}")
+    return AppointmentClient.get_appointment_by_date(state_date, end_date)
+
