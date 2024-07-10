@@ -14,6 +14,7 @@ from services.aidbox_resource_wrapper import MedicationRequest
 from services.aidbox_resource_wrapper import AllergyIntolerance
 from services.aidbox_resource_wrapper import MedicationStatement
 from services.aidbox_resource_wrapper import Condition
+from services.aidbox_service import AidboxApi
 
 logger = logging.getLogger("log")
 
@@ -188,8 +189,7 @@ class AppointmentClient:
             ):
                 logger.info("No Record Found")
                 error_response_data = {
-                "error": "Unable to retrieve datas",
-                "details": str(e),
+                "error": "Unable to retrieve datas"
                 }
                 return JSONResponse(
                     content=error_response_data,
@@ -213,3 +213,72 @@ class AppointmentClient:
             return JSONResponse(
                 content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
+
+    @staticmethod
+    def get_by_patient_name(name: str):
+        try:
+            responce_name = AidboxApi.make_request(method="GET", endpoint=f"/$query/appointmentByPatientName?patientName={name}")
+            data = responce_name.json()
+            formatted_data = [
+                {
+                    "resource": {
+                        "id": item["id"],  
+                        **item["resource"] 
+                    }
+                } for item in data.get('data', [])
+            ]
+            if not data.get('data', []):
+                return JSONResponse(
+                    content=[],
+                    status_code=status.HTTP_404_NOT_FOUND
+                )
+            return JSONResponse(
+                content=formatted_data,
+                status_code=status.HTTP_200_OK
+            )
+        except Exception as e:
+            error_response_data = {
+                "error": "Unable to retrieve appointments",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data, 
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        
+
+    @staticmethod
+    def get_appointment_by_date(state_date: str , end_date: str):
+        try:
+            responce_name = AidboxApi.make_request(method="GET", endpoint=f"/$query/appointmentByStartDate?start={state_date}&end={end_date}")
+            data = responce_name.json()
+            formatted_data = [
+                {
+                    "resource": {
+                        "id": item["id"],  
+                        **item["resource"] 
+                    }
+                } for item in data.get('data', [])
+            ]
+            if not data.get('data', []):
+                return JSONResponse(
+                    content=[],
+                    status_code=status.HTTP_404_NOT_FOUND
+                )
+            return JSONResponse(
+                content=formatted_data,
+                status_code=status.HTTP_200_OK
+            )
+        except Exception as e:
+            error_response_data = {
+                "error": "Unable to retrieve appointments between dates",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data, 
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+
+
+

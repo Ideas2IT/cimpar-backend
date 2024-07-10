@@ -10,7 +10,7 @@ class MasterClient:
         table = {"race": "CimparRace", "state": "CimparState", "lab_test": "CimparLabTest",
                  "ethnicity": "CimparEthnicity"}
         if table_name not in table:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Kindly, verify the table name.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Kindly, verify the name.")
         try:
             master_values = AidboxApi.make_request(
                 method="GET",
@@ -29,5 +29,5 @@ class MasterClient:
             return master_value
         except Exception as e:
             return  JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=status.HTTP_400_BAD_REQUEST,
                 content=f"Failed to fetch data: {str(e)}")
