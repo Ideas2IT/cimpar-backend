@@ -189,7 +189,7 @@ class AppointmentClient:
             ):
                 logger.info("No Record Found")
                 error_response_data = {
-                "error": "Unable to retrieve datas"
+                "error": "Unable to retrieve data"
                 }
                 return JSONResponse(
                     content=error_response_data,
