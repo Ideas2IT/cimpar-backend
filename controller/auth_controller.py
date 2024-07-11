@@ -53,11 +53,12 @@ class AuthClient:
             )
             user_token.save()
             confirm_link = os.path.join(os.environ.get("SET_PASSWORD_URL"), str(token))
+            image_host = os.environ.get("IMAGE_HOST")
             with open('templates/email.html', 'r', encoding='utf-8') as file:
                 email_template = file.read()
             email_body = email_template.replace('{{name}}', user.name).replace(
-                '{{email}}', user.email).replace('{{confirm_link}}', confirm_link)
-
+                '{{email}}', user.email).replace('{{confirm_link}}', confirm_link).replace(
+                '{{host}}', image_host)
             # Email send
             if not send_email(user.email, email_body):
                 raise Exception("Failed to send confirmation email")
