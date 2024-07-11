@@ -88,6 +88,8 @@ def permission_required(resource: str, action: str):
         async def wrapper(*args, **kwargs):
             request: Request = kwargs.get("request")
             auth_token = request.headers.get("Authorization")
+            if not auth_token:
+                raise HTTPException(status_code=403, detail="Authentication token is Mandatory")
             bearer_token.set(auth_token.split("Bearer ")[1])
             if not auth_token:
                 raise HTTPException(status_code=403, detail="Permission denied: Missing auth_token")
