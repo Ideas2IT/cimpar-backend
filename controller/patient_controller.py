@@ -22,6 +22,7 @@ from HL7v2 import get_unique_patient_id_json, get_md5
 from controller.auth_controller import AuthClient
 from models.auth_validation import UserModel, User
 from services.aidbox_resource_wrapper import Patient
+from utils.common_utils import paginate
 
 
 logger = logging.getLogger("log")
@@ -154,15 +155,11 @@ class PatientClient:
             )
 
     @staticmethod
-    def get_all_patients():
+    def get_all_patients(page, page_size):
         try:
-            patients = Patient.get()
-            if patients:
-                logger.info(f"Patients Found: {len(patients)}")
-                return patients
-            return Response(
-                content="Patients not found", status_code=status.HTTP_404_NOT_FOUND
-            )
+            patients = paginate(Patient, page, page_size)
+            logger.info(f"Patients Found: {len(patients)}")
+            return patients
         except Exception as e:
             logger.error(f"Error retrieving patients: {str(e)}")
             logger.error(traceback.format_exc())
@@ -170,7 +167,6 @@ class PatientClient:
                 "error": "Unable to retrieve all patients",
                 "details": str(e),
             }
-
             return JSONResponse(
                 content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )

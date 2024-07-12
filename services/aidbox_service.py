@@ -39,7 +39,12 @@ class AidboxApi:
         )
         response.raise_for_status()  # TODO: handle and type HTTP codes except 200+
         data = response.json()  # TODO: handle HTTP response bodies
-        return data["entry"] if "entry" in data else []
+        final_response = {}
+        if "entry" in data and data["entry"]:
+            final_response["entry"] = data["entry"]
+        if "total" in data:
+            final_response["total"] = data["total"]
+        return final_response
 
     def delete(self):
         assert bearer_token.get(None) is not None

@@ -7,8 +7,12 @@ import os
 from functools import wraps
 from fastapi import HTTPException, Request
 from azure.communication.email import EmailClient
+from fastapi import HTTPException
+from typing import Type, TypeVar, Dict, Any
 
 from HL7v2 import get_md5
+
+T = TypeVar('T')
 
 logger = logging.getLogger("log")
 
@@ -129,3 +133,28 @@ def send_email(recipient_email, body):
 
 def generate_permission_id(user_id):
     return get_md5([user_id, "PERMISSION"])
+
+
+def paginate(model: Type[T], page: int = 1, page_size: int = 10) -> Dict[str, Any]:
+    try:
+        query_params = {
+            "_count": page_size,
+            "_page": page
+        }
+        response = model.get(query_params)
+        if "entry" in response and response["entry"]:
+            return {
+                "data": response["entry"],
+                "pagination": {
+                    "current_page": page,
+                    "page_size": page_size,
+                    "total_items": response["total"],
+                    "total_pages": (int(response["total"]) // page_size) + 1
+                }
+            }
+        else:
+            return {}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+

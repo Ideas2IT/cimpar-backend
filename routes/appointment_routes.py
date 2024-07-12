@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Query
 from typing import Optional
 
 
@@ -45,16 +45,17 @@ async def get_by_id(
         allergy_id,
     )
 
+
 @router.get("/appointments/patient_name/{appointment_by_name}")
 @permission_required("APPOINTMENT", "READ")
-async def get_by_patient_name(name: str, request: Request):
-    logger.info(f"fetch appointment for {name}")
-    return AppointmentClient.get_by_patient_name(name)
+async def get_by_patient_name(appointment_by_name: str, request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
+    logger.info(f"fetch appointment for {appointment_by_name}")
+    return AppointmentClient.get_by_patient_name(appointment_by_name, page, page_size)
 
 
-@router.get("/appointments/date_range/{appointment_by_date}")
+@router.get("/appointments/date_range/{state_date}/{end_date}")
 @permission_required("APPOINTMENT", "READ")
-async def get_appointment_by_date(state_date: str, end_date: str, request: Request):
+async def get_appointment_by_date(state_date: str, end_date: str, request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
     logger.info(f"fetch appointment between {state_date} and {end_date}")
-    return AppointmentClient.get_appointment_by_date(state_date, end_date)
+    return AppointmentClient.get_appointment_by_date(state_date, end_date, page, page_size)
 

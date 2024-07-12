@@ -215,10 +215,21 @@ class AppointmentClient:
             )
 
     @staticmethod
-    def get_by_patient_name(name: str):
+    def get_by_patient_name(name: str, page: int, page_size: int):
         try:
-            responce_name = AidboxApi.make_request(method="GET", endpoint=f"/$query/appointmentByPatientName?patientName={name}")
-            data = responce_name.json()
+            limit = page_size
+            offset = (page - 1) * page_size
+            response_name = AidboxApi.make_request(
+                method="GET",
+                endpoint=f"/$query/appointmentByPatientName?patientName={name}&limit={limit}&offset={offset}"
+            )
+            data = response_name.json()
+            count_res = AidboxApi.make_request(
+                method="GET",
+                endpoint=f"/$query/appointmentByPatientNameCount?patientName={name}"
+            )
+            count_resp = count_res.json()
+            total_count = count_resp["data"][0]["count"]
             formatted_data = [
                 {
                     "resource": {
@@ -227,13 +238,22 @@ class AppointmentClient:
                     }
                 } for item in data.get('data', [])
             ]
+            final_response = {
+                "data": formatted_data,
+                "pagination": {
+                    "current_page": page,
+                    "page_size": page_size,
+                    "total_items": total_count,
+                    "total_pages": (total_count // page_size) + (1 if total_count % page_size != 0 else 0)
+                }
+            }
             if not data.get('data', []):
                 return JSONResponse(
                     content=[],
-                    status_code=status.HTTP_404_NOT_FOUND
+                    status_code=status.HTTP_200_OK
                 )
             return JSONResponse(
-                content=formatted_data,
+                content=final_response,
                 status_code=status.HTTP_200_OK
             )
         except Exception as e:
@@ -245,13 +265,23 @@ class AppointmentClient:
                 content=error_response_data, 
                 status_code=status.HTTP_400_BAD_REQUEST
             )
-        
 
     @staticmethod
-    def get_appointment_by_date(state_date: str , end_date: str):
+    def get_appointment_by_date(state_date: str, end_date: str, page: int, page_size: int):
         try:
-            responce_name = AidboxApi.make_request(method="GET", endpoint=f"/$query/appointmentByStartDate?start={state_date}&end={end_date}")
-            data = responce_name.json()
+            limit = page_size
+            offset = (page - 1) * page_size
+            response_name = AidboxApi.make_request(
+                method="GET",
+                endpoint=f"/$query/appointmentByStartDate?start={state_date}&end={end_date}&limit={limit}&offset={offset}"
+            )
+            data = response_name.json()
+            count_res = AidboxApi.make_request(
+                method="GET",
+                endpoint=f"/$query/appointmentByStartDateCount?start={state_date}&end={end_date}"
+            )
+            count_resp = count_res.json()
+            total_count = count_resp["data"][0]["count"]
             formatted_data = [
                 {
                     "resource": {
@@ -260,13 +290,22 @@ class AppointmentClient:
                     }
                 } for item in data.get('data', [])
             ]
+            final_response = {
+                "data": formatted_data,
+                "pagination": {
+                    "current_page": page,
+                    "page_size": page_size,
+                    "total_items": total_count,
+                    "total_pages": (total_count // page_size) + (1 if total_count % page_size != 0 else 0)
+                }
+            }
             if not data.get('data', []):
                 return JSONResponse(
                     content=[],
-                    status_code=status.HTTP_404_NOT_FOUND
+                    status_code=status.HTTP_200_OK
                 )
             return JSONResponse(
-                content=formatted_data,
+                content=final_response,
                 status_code=status.HTTP_200_OK
             )
         except Exception as e:

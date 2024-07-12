@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Query
 
 from utils.common_utils import permission_required, user_id_context
 from models.patient_validation import PatientModel, PatientUpdateModel
@@ -28,9 +28,9 @@ async def get_patient(patient_id: str, request: Request):
 
 @router.get("/patients")
 @permission_required("PATIENT", "READ")
-async def get_all_patients(request: Request):
+async def get_all_patients(request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
     logger.info("Fetching all patients")
-    return PatientClient.get_all_patients()
+    return PatientClient.get_all_patients(page, page_size)
 
 
 @router.put("/patients/{patient_id}")
