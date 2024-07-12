@@ -7,7 +7,7 @@ router = APIRouter()
 logger = logging.getLogger("log")
 
 
-@router.get("master/{table_name}")
+@router.get("/master/{table_name}")
 @permission_required("MASTER", "READ")
 async def get_master_value(table_name: str, request: Request):
     logger.info(f"master table {table_name}")
