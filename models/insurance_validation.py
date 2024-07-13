@@ -1,19 +1,18 @@
 from pydantic import BaseModel
+from typing import Optional
 
 
 class CoverageModel(BaseModel):
-    status: str
-    insurance_type: int
-    provider_name: str
-    policy_number: str
-    group_number: str
+    insurance_type: str
+    groupNumber: Optional[str] = None
+    policyNumber: Optional[str] = None
+    providerName: Optional[str] = None
 
 
 class CoverageUpdateModel(BaseModel):
-    status: str
-    insurance_type: int
-    provider_name: str
-    policy_number: str
-    group_number: str
+    insurance_type: str
+    providerName: Optional[str] = None
+    policyNumber: Optional[str] = None
+    groupNumber: Optional[str] = None
 
     

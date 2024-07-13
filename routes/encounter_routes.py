@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Query
 
 from models.encounter_validation import EncounterModel, EncounterUpdateModel
 from controller.encounter_controller import EncounterClient
@@ -35,9 +35,9 @@ async def get_encounter_by_id(patient_id: str, encounter_id: str, request: Reque
 
 @router.get("/encounter")
 @permission_required("ENCOUNTER", "READ")
-async def get_all_encounters(request: Request):
+async def get_all_encounters(request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
     logger.info("Fetching all encounters")
-    return EncounterClient.get_all_encounters()
+    return EncounterClient.get_all_encounters(page, page_size)
 
 
 @router.put("/encounter/{patient_id}/{encounter_id}")

@@ -3,6 +3,7 @@ import traceback
 from fastapi import status
 from fastapi.responses import JSONResponse
 
+from utils.common_utils import paginate
 from services.aidbox_resource_wrapper import Observation
 
 logger = logging.getLogger("log")
@@ -35,12 +36,19 @@ class ObservationClient:
             )
         
     @staticmethod
-    def get_all_lab_result():
+    def get_all_lab_result(page, page_size):
         try:
-            lab_result = Observation.get()
-            if lab_result:
+            lab_result = paginate(Observation, page, page_size)
+            if lab_result.get('total', 1) == 0:
                 logger.info(f"Lab result found for: {len(lab_result)}")
-            return lab_result
+                return JSONResponse(
+                    content=[],
+                    status_code=status.HTTP_200_OK
+                )
+            return JSONResponse(
+                    content=lab_result,
+                    status_code=status.HTTP_200_OK
+                )
         except Exception as e:
             logger.error(f"Error retrieving Lab Result: {str(e)}")
             logger.error(traceback.format_exc())

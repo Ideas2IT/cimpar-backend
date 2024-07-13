@@ -9,6 +9,7 @@ from aidbox.resource.encounter import Encounter_Participant, Encounter_Location,
 from constants import PATIENT_REFERENCE, CLASS_DISPLAY, ENCOUNTER_TYPE_SYSTEM, ENCOUNTER_TYPE_CODE, TREATMENT_SUMMARY_SYSTEM, TREATMENT_SUMMARY_CODE, ENCOUNTER_STATUS, CLASS_CODE
 from models.encounter_validation import EncounterModel, EncounterUpdateModel
 from services.aidbox_resource_wrapper import Encounter 
+from utils.common_utils import paginate
 
 
 logger = logging.getLogger("log")
@@ -213,14 +214,18 @@ class EncounterClient:
             )
     
     @staticmethod
-    def get_all_encounters():
+    def get_all_encounters(page, page_size):
         try:
-            encounters = Encounter.get()
-            if encounters:
-                logger.info(f"Encounters Found {len(encounters)}")
-                return encounters
+            encounters = paginate(Encounter, page, page_size)
+            if encounters.get('total', 1) == 0:
+                return JSONResponse(
+                    content=[],
+                    status_code=status.HTTP_200_OK
+                ) 
+            logger.info(f"Encounters Found {len(encounters)}")
             return JSONResponse(
-                content={"Error retrieving encounters"}, status_code=status.HTTP_404_NOT_FOUND
+                content=encounters, 
+                status_code=status.HTTP_200_OK
             )
         except Exception as e:
             logger.error(f"Error retrieving encounters: {str(e)}")

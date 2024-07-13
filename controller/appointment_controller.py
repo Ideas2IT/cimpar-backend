@@ -14,6 +14,7 @@ from services.aidbox_resource_wrapper import MedicationRequest
 from services.aidbox_resource_wrapper import AllergyIntolerance
 from services.aidbox_resource_wrapper import MedicationStatement
 from services.aidbox_resource_wrapper import Condition
+from utils.common_utils import paginate
 from services.aidbox_service import AidboxApi
 
 logger = logging.getLogger("log")
@@ -33,7 +34,7 @@ class AppointmentClient:
                         status=PARTICIPANT_STATUS,
                     )
                 ],
-                start=app.date_of_appoinment,
+                start=app.date_of_appointment,
                 end=app.schedule_time,
                 patientInstruction=app.reason_for_test,
             )
@@ -133,14 +134,17 @@ class AppointmentClient:
             )
 
     @staticmethod
-    def get_all_appointment():
+    def get_all_appointment(page, page_size):
         try:
-            appointment = Appointment.get()
-            if appointment:
-                return appointment
+            appointment = paginate(Appointment, page, page_size)
+            if appointment.get('total', 1) == 0:
+                return JSONResponse(
+                content=[],
+                status_code=status.HTTP_200_OK
+            )
             return JSONResponse(
-                content={"Error retrieving appointments"},
-                status_code=status.HTTP_404_NOT_FOUND,
+                content=appointment,
+                status_code=status.HTTP_200_OK,
             )
         except Exception as e:
             logger.error(f"Error retrieving encounters: {str(e)}")

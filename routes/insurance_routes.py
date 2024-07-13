@@ -4,6 +4,7 @@ import logging
 from models.insurance_validation import CoverageModel, CoverageUpdateModel
 from utils.common_utils import permission_required
 from controller.insurance_controller import CoverageClient
+from typing import Optional
 
 
 router = APIRouter()
@@ -34,11 +35,11 @@ async def get_insurance_by_id(patient_id: str, insurance_id: str, request: Reque
     return CoverageClient.get_coverage_by_id(patient_id, insurance_id)
 
 
-@router.put('/insurance/{patient_id}/{insurance_id}')
+@router.put('/insurance/{patient_id}')
 @permission_required("INSURANCE", "UPDATE")
-async def update_insurance(patient_id: str, insurance_id: str, updated_insurance: CoverageUpdateModel, request: Request):
+async def update_insurance(patient_id: str, updated_insurance: CoverageUpdateModel, request: Request, insurance_id: Optional[str] = None):
     logger.info(f"Request Patient_id: {patient_id}")
-    return CoverageClient.update_by_insurance_id(patient_id, insurance_id, updated_insurance)
+    return CoverageClient.update_by_insurance_id(patient_id, updated_insurance, insurance_id)
 
 
 @router.delete('/insurance/{patient_id}/{insurance_id}')

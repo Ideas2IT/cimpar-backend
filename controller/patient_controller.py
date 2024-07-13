@@ -1,5 +1,6 @@
 import logging
 import traceback
+import json
 from fastapi import Response, status, HTTPException
 from fastapi.responses import JSONResponse
 
@@ -15,7 +16,12 @@ from constants import (
     ETHNICITY_URL,
     PATIENT_META_URL,
     IDENTIFIER_SYSTEM,
-    IDENTIFIER_VALUE
+    IDENTIFIER_VALUE,
+    COMMUNICATION_CODE,
+    MOBILE,
+    ALTERNATE_NUMBER,
+    RANK_MOBILE, 
+    RANK_ALTERNATE
 )
 from models.patient_validation import PatientModel, PatientUpdateModel
 from HL7v2 import get_unique_patient_id_json, get_md5
@@ -23,6 +29,8 @@ from controller.auth_controller import AuthClient
 from models.auth_validation import UserModel, User
 from services.aidbox_resource_wrapper import Patient
 from utils.common_utils import paginate
+from controller.insurance_controller import CoverageClient
+from aidbox.resource.patient import Patient as patient_wrapper
 
 
 logger = logging.getLogger("log")
@@ -33,7 +41,7 @@ class PatientClient:
     def create_patient(pat: PatientModel):
         try:
             patient_id = get_unique_patient_id_json(
-                pat.first_name, pat.last_name, pat.date_of_birth
+                pat.firstName, pat.lastName, pat.dob
             )
             # As this is open API, and we won't get Token here, so using default AIDBOX API.
             from aidbox.resource.patient import Patient
@@ -41,7 +49,7 @@ class PatientClient:
             #####
 
             patient_id_update = get_md5(
-                [pat.first_name, pat.last_name, pat.date_of_birth]
+                [pat.firstName, pat.lastName, pat.dob]
             )
 
             if Patient.get({"id": patient_id_update}):
@@ -49,30 +57,49 @@ class PatientClient:
                     detail=f"Error: Patient with id {patient_id_update} already exists",
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
+            result = {}
+
+            if not pat.createAccount:
+                update_patient = PatientClient.update_patient_by_id(pat, pat.id, from_patient=True)
+                result["id"] = update_patient.get("id")
+                update_coverage = CoverageClient.create_coverage(pat, pat.id, from_patient=True)
+                if update_coverage:
+                    result["is_primary_insurance"] = update_coverage.get("is_primary_insurance")
+                    result["is_secondary_insurance"] = update_coverage.get("is_secondary_insurance")  
+                result['Updated'] = True              
+                return JSONResponse(
+                    content=result,
+                    status_code=status.HTTP_200_OK
+                )
+
+            height = pat.height if pat.height else ""
+            weight = pat.weight if pat.weight else ""
+            phone_number = pat.phoneNo if pat.phoneNo else ""
+            email = pat.email if pat.email else ""
 
             patient = Patient(
                 id=patient_id,
                 name=[
                     HumanName(
-                        family=pat.last_name, given=[pat.first_name, pat.middle_name]
+                        family=pat.lastName, given=[pat.firstName, pat.middleName]
                     )
                 ],
                 identifier=[Identifier(system=IDENTIFIER_SYSTEM, value=IDENTIFIER_VALUE)],
-                gender=pat.gender,
-                birthDate=pat.date_of_birth,
+                gender=pat.gender.lower(),
+                birthDate=pat.dob,
                 contact=[
                     Patient_Contact(
                         telecom=[
-                            ContactPoint(system=PHONE_SYSTEM, value=pat.phone_number),
-                            ContactPoint(system=EMAIL_SYSTEM, value=pat.email),
+                            ContactPoint(system=PHONE_SYSTEM, value=phone_number),
+                            ContactPoint(system=EMAIL_SYSTEM, value=email)
                         ]
                     )
                 ],
                 address=[
                     Address(
                         city=pat.city,
-                        postalCode=pat.zip_code,
-                        text=pat.full_address,
+                        postalCode=pat.zipCode,
+                        text=pat.address,
                         state=pat.state,
                         country=pat.country,
                     )
@@ -82,7 +109,7 @@ class PatientClient:
                     extension=[
                         Extension(
                             url=TEXT,
-                            valueString = pat.race,
+                            valueString=pat.race,
                             valueCoding=Coding(
                                 system=SYSTEM,
                                 display=pat.race,
@@ -94,7 +121,7 @@ class PatientClient:
                         extension=[
                             Extension(
                                 url=TEXT,
-                                valueString = pat.ethnicity,
+                                valueString=pat.ethnicity,
                                 valueCoding=Coding(
                                     system=SYSTEM,
                                     display=pat.ethnicity,
@@ -103,21 +130,43 @@ class PatientClient:
                         ],
                     )
                 ],
-                communication=[Patient_Communication(language=CodeableConcept(coding=[Coding(system=PATIENT_META_URL, code=pat.height, display=pat.weight)]))]
+                communication=[
+                    Patient_Communication(
+                        language=CodeableConcept(
+                            coding=[
+                                Coding(
+                                    system=PATIENT_META_URL, 
+                                    code=COMMUNICATION_CODE, 
+                                    display=weight
+                                )
+                            ], 
+                        text=height)
+                    )
+                ]
             )
-            patient.meta = Meta(
-                profile = [PATIENT_META_URL]
+            patient.meta=Meta(
+                profile=[PATIENT_META_URL]
             )
             patient.save()
-
+            result['id'] =  patient.id
+            coverage_values = CoverageClient.create_coverage(pat, patient.id, from_patient=True)
+            if coverage_values:
+                if coverage_values.get('is_primary_insurance'):
+                    result['is_primary_insurance'] = coverage_values.get('is_primary_insurance')
+                if coverage_values.get('is_secondary_insurance'):
+                    result['is_secondary_insurance'] = coverage_values.get('is_secondary_insurance')
+                if coverage_values.get('is_primary_coverage_exist'):
+                    result['is_primary_coverage_exist'] = coverage_values.get('is_primary_coverage_exist')
+                if coverage_values.get('is_secondary_coverage_exist'):
+                    result['is_secondary_coverage_exist'] = coverage_values.get('is_secondary_coverage_exist')
+            result['created'] = True
             logger.debug("Patient saved successfully")
-            response_data = {"id": patient.id, "created": True}
             if not User.get({"id": patient.id}):
                 user = UserModel(email=pat.email, id=patient.id,
-                                 name=pat.first_name + " " + pat.middle_name + " "+ pat.middle_name)
+                            name=pat.firstName + " " + pat.middleName + " "+ pat.lastName)
                 response_data = AuthClient.create(user)
-            logger.info(f"Added Successfully in DB: {response_data}")
-            return response_data
+            logger.info(f"Added Successfully in DB: {result}")
+            return result
         except Exception as e:
             logger.error(f"Unable to create a patient: {str(e)}")
             logger.error(traceback.format_exc())
@@ -159,7 +208,15 @@ class PatientClient:
         try:
             patients = paginate(Patient, page, page_size)
             logger.info(f"Patients Found: {len(patients)}")
-            return patients
+            if patients.get('total', 1) == 0:
+                return JSONResponse(
+                    content=[],
+                    status_code=status.HTTP_200_OK
+            )
+            return JSONResponse(
+                content=patients,
+                status_code=status.HTTP_200_OK
+            )
         except Exception as e:
             logger.error(f"Error retrieving patients: {str(e)}")
             logger.error(traceback.format_exc())
@@ -172,22 +229,29 @@ class PatientClient:
             )
 
     @staticmethod
-    def update_patient_by_id(pat: PatientUpdateModel, patient_id: str):
+    def update_patient_by_id(pat: PatientUpdateModel, patient_id: str, from_patient=False):
         try:
-            patient = Patient(
-                id=patient_id,
+            patient_id_value = pat.id if pat.id else patient_id
+            primary_insurance = patient_wrapper if from_patient else Patient
+            height = pat.height if pat.height else ""
+            weight = pat.weight if pat.weight else ""            
+            alternative_number = pat.alternativeNumber if pat.alternativeNumber else ""
+
+            patient = primary_insurance(
+                id=patient_id_value,
                 name=[
                     HumanName(
-                        family=pat.last_name, given=[pat.first_name, pat.middle_name]
+                        family=pat.lastName, given=[pat.firstName, pat.middleName]
                     )
                 ],
-                gender=pat.gender,
-                birthDate=pat.date_of_birth,
+                gender=pat.gender.lower(),
+                birthDate=pat.dob,
                 contact=[
                     Patient_Contact(
                         telecom=[
-                            ContactPoint(system=PHONE_SYSTEM, value=pat.phone_number),
+                            ContactPoint(system=PHONE_SYSTEM, value=pat.phoneNo, use=MOBILE, rank=RANK_MOBILE),
                             ContactPoint(system=EMAIL_SYSTEM, value=pat.email),
+                            ContactPoint(system=PHONE_SYSTEM, value=alternative_number, use=ALTERNATE_NUMBER, rank=RANK_ALTERNATE)
                         ]
                     )
                 ],
@@ -195,8 +259,8 @@ class PatientClient:
                 address=[
                     Address(
                         city=pat.city,
-                        postalCode=pat.zip_code,
-                        text=pat.full_address,
+                        postalCode=pat.zipCode,
+                        text=pat.address,
                         state=pat.state,
                         country=pat.country,
                     )
@@ -227,7 +291,19 @@ class PatientClient:
                         ],
                     )
                 ],
-                communication=[Patient_Communication(language=CodeableConcept(coding=[Coding(system=PATIENT_META_URL, code=pat.height, display=pat.weight)]))]
+                communication=[
+                    Patient_Communication(
+                        language=CodeableConcept(
+                            coding=[
+                                Coding(
+                                    system=PATIENT_META_URL, 
+                                    code=COMMUNICATION_CODE, 
+                                    display=weight
+                                )
+                            ], 
+                        text=height)
+                    )
+                ]
             )
             patient.meta = Meta(
                 profile = [PATIENT_META_URL]
