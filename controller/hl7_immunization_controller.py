@@ -5,6 +5,7 @@ import traceback
 import requests
 import os
 
+from utils.common_utils import paginate
 from services.aidbox_resource_wrapper import Immunization
 
 logger = logging.getLogger("log")
@@ -89,11 +90,14 @@ class HL7ImmunizationClient:
             )
         
     @staticmethod
-    def get_all_immunizations():
+    def get_all_immunizations(page, page_size):
         try:
-            response_immunization = Immunization.get()
+            response_immunization = paginate(Immunization, page, page_size)
             if not response_immunization:
-                return JSONResponse(status_code=404, content="Immunizations not found")
+                return JSONResponse(
+                    status_code=status.HTTP_200_OK, 
+                    content=[]
+                )
             return {"immunizations": response_immunization}
         except Exception as e:
             logger.error(f"Unable to get immunization data: {str(e)}")
@@ -116,8 +120,8 @@ class HL7ImmunizationClient:
             if immunizations.get('total', 0) == 0:
                 logger.info(f"No Immunization found for name: {name}")
                 return JSONResponse(
-                    content={"error": "No Immunization found for patient"},
-                    status_code=status.HTTP_404_NOT_FOUND
+                    content=[],
+                    status_code=status.HTTP_200_OK
                 )
             return {"immunizations": immunizations}
         except Exception as e:

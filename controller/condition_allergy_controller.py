@@ -321,8 +321,8 @@ class ConditionClient:
                     allergy_info = {"system": system, "code": code, "display": definition}
                     allergy_info_list.append(allergy_info)
             if not allergy_list:
-                return JSONResponse(status_code=404, content="Allergy not found")
-            return allergy_info_list
+                return JSONResponse(status_code=status.HTTP_200_OK, content=[])
+            return JSONResponse(status_code=status.HTTP_200_OK, content=allergy_info_list)
         except Exception as e:
             logger.error(f"Unable to get allergy list: {str(e)}")
             logger.error(traceback.format_exc())
@@ -330,7 +330,6 @@ class ConditionClient:
                 "error": "No allergy found for allergy",
                 "details": str(e),
             }
-
             return JSONResponse(
                 content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )

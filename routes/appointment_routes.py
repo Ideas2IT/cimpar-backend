@@ -21,9 +21,9 @@ async def create_appointment(patient_id: str, app: AppoinmentModel, request: Req
 
 @router.get("/appointment")
 @permission_required("APPOINTMENT", "READ")
-async def get_all_appointment(request: Request):
+async def get_all_appointment(request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
     logger.info("Fetching all appointment")
-    return AppointmentClient.get_all_appointment()
+    return AppointmentClient.get_all_appointment(page, page_size)
 
 
 @router.get("/appointment/{patient_id}/{appointment_id}")
