@@ -61,19 +61,35 @@ class MedicationClient:
     def create_medication(med: MedicationCreateModel, patient_id: str):
         try:
             result = {}
-            if med.request_approved:
+            response_statement = MedicationStatement.make_request(
+                    method="GET",
+                    endpoint=f"/fhir/MedicationStatement/?subject=Patient/{patient_id}",
+                )
+            statement = response_statement.json()
+            result["is_current_medication_exist"] = True if statement.get("total", 0) > 0 else False
+
+            response_request = MedicationRequest.make_request(
+                    method="GET",
+                    endpoint=f"/fhir/MedicationRequest/?subject=Patient/{patient_id}",
+                )
+            request = response_request.json()
+            result["is_other_medication_exist"] = True if request.get("total", 0) > 0 else False
+
+            if med.request_approved and not result["is_other_medication_exist"]:
                 medication_request = MedicationClient.create_medication_request(
                     med, patient_id
                 )
                 medication_request.save()
                 result["other_medication_id"] = medication_request.id
+            result["is_other_medication_exist"] = True
 
-            if med.statement_approved:
+            if med.statement_approved and not result["is_current_medication_exist"]:
                 medication_statement = MedicationClient.create_medication_statement(
                     med, patient_id
                 )
                 medication_statement.save()
                 result["current_medication_id"] = medication_statement.id
+            result["is_current_medication_exist"] = True
             result["created"] = True
             logger.info(f"Added Successfully in DB: {result}")
 
@@ -319,4 +335,4 @@ class MedicationClient:
             "display": resource.get("display", "")
         }
         return medication_info if medication_info["display"] else None
-
+    
