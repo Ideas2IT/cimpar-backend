@@ -49,7 +49,7 @@ class CoverageClient:
                 existing_coverages = response_coverage.json() if response_coverage else {}
 
                 patient_id_occurrences = sum(1 for entry in existing_coverages.get('entry', []) if entry['resource']['beneficiary']['reference'] == f"Patient/{patient_id}")
-
+git
                 if patient_id_occurrences >= 3:
                     logger.error(f"A patient can only have 3 insurance")
                     return JSONResponse(
