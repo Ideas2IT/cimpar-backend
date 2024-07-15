@@ -137,11 +137,11 @@ class AppointmentClient:
     def get_all_appointment(page, page_size):
         try:
             appointment = paginate(Appointment, page, page_size)
-            if appointment.get('total', 1) == 0:
+            if appointment.get('total_items', 1) == 0:
                 return JSONResponse(
-                content=[],
-                status_code=status.HTTP_200_OK
-            )
+                    content=[],
+                    status_code=status.HTTP_200_OK
+                )
             return JSONResponse(
                 content=appointment,
                 status_code=status.HTTP_200_OK,
@@ -153,10 +153,9 @@ class AppointmentClient:
                 "error": "Unable to retrieve appointments",
                 "details": str(e),
             }
-
             return JSONResponse(
                 content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
-            )
+            ) 
 
     @staticmethod
     def get_by_id(
@@ -322,6 +321,11 @@ class AppointmentClient:
                 status_code=status.HTTP_400_BAD_REQUEST
             )
 
-
-
-
+    @staticmethod
+    def get_appointment(appointment_by_name: str, state_date:str, end_date: str, all_appointment: bool, page: str, page_size: str):
+        if appointment_by_name:
+            return AppointmentClient.get_by_patient_name(appointment_by_name, page, page_size)
+        if all_appointment:
+            return AppointmentClient.get_all_appointment(page, page_size)
+        else:
+            return AppointmentClient.get_appointment_by_date(state_date, end_date, page, page_size)
