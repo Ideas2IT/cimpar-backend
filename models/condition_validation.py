@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 class Concept(BaseModel):
     code: str
@@ -7,12 +7,12 @@ class Concept(BaseModel):
     display: str
 
 class ConditionModel(BaseModel):
-    current_condition: list[Concept]
-    additional_condition: list[Concept]
-    current_allergy: list[Concept]
-    additional_allergy: list[Concept]
+    current_condition: Optional[List[Concept]] = None
+    additional_condition: Optional[List[Concept]] = None
+    current_allergy: Optional[List[Concept]] = None
+    additional_allergy: Optional[List[Concept]] = None
     family_condition: bool
-    family_medications: list[Concept]
+    family_medical_condition: Optional[List[Concept]] = None
 
 class ConditionUpdateModel(BaseModel):
     current_condition_id: Optional[str] = None
@@ -20,12 +20,12 @@ class ConditionUpdateModel(BaseModel):
     current_allergy_id: Optional[str] = None
     additional_allergy_id: Optional[str] = None
     family_condition_id: Optional[str] = None
-    current_condition: list[Concept]
-    additional_condition: list[Concept]
-    current_allergy: list[Concept]
-    additional_allergy: list[Concept]
+    current_condition: Optional[List[Concept]] = None
+    additional_condition: Optional[List[Concept]] = None
     family_condition: bool
-    family_medications: list[Concept]
+    current_allergy: Optional[List[Concept]] = None
+    additional_allergy: Optional[List[Concept]] = None
+    family_medical_condition: Optional[List[Concept]] = None
 
 
 
