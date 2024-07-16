@@ -1,6 +1,5 @@
 import logging
 import traceback
-import json
 from fastapi import Response, status, HTTPException
 from fastapi.responses import JSONResponse
 
@@ -30,7 +29,6 @@ from models.auth_validation import UserModel, User
 from services.aidbox_resource_wrapper import Patient
 from utils.common_utils import paginate
 from controller.insurance_controller import CoverageClient
-from aidbox.resource.patient import Patient as patient_wrapper
 
 
 logger = logging.getLogger("log")
@@ -59,18 +57,18 @@ class PatientClient:
                 )
             result = {}
 
-            if not pat.createAccount:
-                update_patient = PatientClient.update_patient_by_id(pat, pat.id, from_patient=True)
-                result["id"] = update_patient.get("id")
-                update_coverage = CoverageClient.create_coverage(pat, pat.id, from_patient=True)
-                if update_coverage:
-                    result["is_primary_insurance"] = update_coverage.get("is_primary_insurance")
-                    result["is_secondary_insurance"] = update_coverage.get("is_secondary_insurance")  
-                result['Updated'] = True              
-                return JSONResponse(
-                    content=result,
-                    status_code=status.HTTP_200_OK
-                )
+            # if not pat.createAccount:
+            #     update_patient = PatientClient.update_patient_by_id(pat, pat.id, from_patient=True)
+            #     result["id"] = update_patient.get("id")
+            #     update_coverage = CoverageClient.create_coverage(pat, pat.id, from_patient=True)
+            #     if update_coverage:
+            #         result["is_primary_insurance"] = update_coverage.get("is_primary_insurance")
+            #         result["is_secondary_insurance"] = update_coverage.get("is_secondary_insurance")  
+            #     result['Updated'] = True              
+            #     return JSONResponse(
+            #         content=result,
+            #         status_code=status.HTTP_200_OK
+            #     )
 
             height = pat.height if pat.height else ""
             weight = pat.weight if pat.weight else ""
@@ -148,17 +146,18 @@ class PatientClient:
                 profile=[PATIENT_META_URL]
             )
             patient.save()
-            result['id'] =  patient.id
-            coverage_values = CoverageClient.create_coverage(pat, patient.id, from_patient=True)
-            if coverage_values:
-                if coverage_values.get('is_primary_insurance'):
-                    result['is_primary_insurance'] = coverage_values.get('is_primary_insurance')
-                if coverage_values.get('is_secondary_insurance'):
-                    result['is_secondary_insurance'] = coverage_values.get('is_secondary_insurance')
-                if coverage_values.get('is_primary_coverage_exist'):
-                    result['is_primary_coverage_exist'] = coverage_values.get('is_primary_coverage_exist')
-                if coverage_values.get('is_secondary_coverage_exist'):
-                    result['is_secondary_coverage_exist'] = coverage_values.get('is_secondary_coverage_exist')
+            result['id'] = patient.id
+            if pat.haveInsurance:
+                coverage_values = CoverageClient.create_coverage(pat, patient.id, from_patient=True)
+                if coverage_values:
+                    if coverage_values.get('is_primary_insurance'):
+                        result['is_primary_insurance'] = coverage_values.get('is_primary_insurance')
+                    if coverage_values.get('is_secondary_insurance'):
+                        result['is_secondary_insurance'] = coverage_values.get('is_secondary_insurance')
+                    if coverage_values.get('is_primary_coverage_exist'):
+                        result['is_primary_coverage_exist'] = coverage_values.get('is_primary_coverage_exist')
+                    if coverage_values.get('is_secondary_coverage_exist'):
+                        result['is_secondary_coverage_exist'] = coverage_values.get('is_secondary_coverage_exist')
             result['created'] = True
             logger.debug("Patient saved successfully")
             if not User.get({"id": patient.id}):
@@ -229,16 +228,14 @@ class PatientClient:
             )
 
     @staticmethod
-    def update_patient_by_id(pat: PatientUpdateModel, patient_id: str, from_patient=False):
+    def update_patient_by_id(pat: PatientUpdateModel, patient_id: str):
         try:
-            patient_id_value = pat.id if pat.id else patient_id
-            primary_insurance = patient_wrapper if from_patient else Patient
             height = pat.height if pat.height else ""
             weight = pat.weight if pat.weight else ""            
             alternative_number = pat.alternativeNumber if pat.alternativeNumber else ""
 
-            patient = primary_insurance(
-                id=patient_id_value,
+            patient = Patient(
+                id=patient_id,
                 name=[
                     HumanName(
                         family=pat.lastName, given=[pat.firstName, pat.middleName]
