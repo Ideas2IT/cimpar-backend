@@ -125,6 +125,19 @@ lab_test_data = [
     {"code": "TRIG", "display": "TRIGLYCERIDES"}
 ]
 
+insurance_company_data = [
+    {"name": "AAA Insurance Company", "code": "11983"},
+    {"name": "Allstate Insurance", "code": "19232"},
+    {"name": "Direct Auto Insurance", "code": "20133"},
+    {"name": "Geico Insurance", "code": "35882"},
+    {"name": "Liberty Mutual Insurance", "code": "23043"},
+    {"name": "Progressive Insurance", "code": "24260"},
+    {"name": "State Farm Insurance", "code": "25178"},
+    {"name": "The General Insurance", "code": "13703"},
+    {"name": "Travelers Insurance", "code": "25658"},
+    {"name": "USAA Insurance", "code": "186000"},
+]
+
 # Create tables and populate them with data
 for table in tables:
     # Create table
@@ -145,6 +158,8 @@ for table in tables:
         data_list = state_data
     elif table['id'] == "CimparLabTest":
         data_list = lab_test_data
+    elif table['id'] == "CimparInsuranceCompany":
+        data_list = insurance_company_data
 
     for data in data_list:
         entry_creation_response = requests.post(

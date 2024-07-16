@@ -20,7 +20,6 @@ class CoverageClient:
     def create_coverage(coverage: PatientModel, patient_id: str, from_patient=False):
         try:
             result = {}
-
             primary_insurance = CoverageWrapper if from_patient else Coverage
             secondary_insurance = CoverageWrapper if from_patient else Coverage
             if from_patient:
@@ -30,55 +29,75 @@ class CoverageClient:
                 if patient_id_occurrences >= 3:
                     logger.error(f"A patient can only have 3 insurance")
                     return JSONResponse(
-                        content="A patient can only have 3 insurance", status_code=status.HTTP_200_OK
+                        content="A patient can only have 3 insurance", status_code=status.HTTP_400_BAD_REQUEST
                     )
                 if existing_coverages:
                     primary_coverage_result = CoverageClient.get_primary_coverage(existing_coverages, patient_id)
                     secondary_coverage_result = CoverageClient.get_secondary_coverage(existing_coverages, patient_id)
+                    if primary_coverage_result.get('is_primary_insurance_exist') is True:
+                        result["is_primary_coverage_exist"] = True
                     if primary_coverage_result.get('is_primary_insurance_exist') is False:
                         primary_insurance_plan = CoverageClient.create_primary_insurance(primary_insurance, coverage, patient_id)
                         primary_insurance_plan.save()
                         result["is_primary_insurance"] = primary_insurance_plan.id
-                    if secondary_coverage_result.get('is_secondary_insurance_exist') is False:
+                    if secondary_coverage_result.get('is_secondary_insurance_exist') is True:
+                        result["is_secondary_coverage_exist"] = True
+                    if secondary_coverage_result.get('is_secondary_insurance_exist') is False and coverage.haveSecondaryInsurance:
                         secondary_insurance_plan = CoverageClient.create_secondary_insurance(secondary_insurance, coverage, patient_id)
                         secondary_insurance_plan.save()
                         result["is_secondary_insurance"] = secondary_insurance_plan.id
                         result["created"] = True
-            else:
-                response_coverage = Coverage.make_request(method="GET", endpoint=f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
-                existing_coverages = response_coverage.json() if response_coverage else {}
+            return result
+        except Exception as e:
+            logger.error(f"Unable to create a insurance_plan: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to create Insurance",
+                "details": str(e),
+            }
 
-                patient_id_occurrences = sum(1 for entry in existing_coverages.get('entry', []) if entry['resource']['beneficiary']['reference'] == f"Patient/{patient_id}")
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        
+    @staticmethod
+    def create_coverage_insurance(ins_plan: CoverageModel, patient_id: str):
+        try:
+            result = {}
+            response_coverage = Coverage.make_request(method="GET", endpoint=f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
+            existing_coverages = response_coverage.json() if response_coverage else {}
 
-                if patient_id_occurrences >= 3:
-                    logger.error(f"A patient can only have 3 insurance")
-                    return JSONResponse(
-                        content="A patient can only have 3 insurance", status_code=status.HTTP_200_OK
-                    )
-                if existing_coverages:
-                    primary_coverage_result = CoverageClient.get_primary_coverage(existing_coverages, patient_id)
-                    secondary_coverage_result = CoverageClient.get_secondary_coverage(existing_coverages, patient_id)
-                    tertiary_coverage_result = CoverageClient.get_tertiary_coverage(existing_coverages, patient_id)
-                    if primary_coverage_result.get('is_primary_insurance_exist') is True:
-                        result["is_primary_coverage_exist"] = True
-                    if primary_coverage_result.get('is_primary_insurance_exist') is False:
-                        primary_insurance_plan = CoverageClient.create_insurance_plan(patient_id, coverage)
-                        primary_insurance_plan.save()
-                        result["is_primary_insurance"] = primary_insurance_plan.id
-                    if secondary_coverage_result.get('is_secondary_insurance_exist') is True:
-                        result["is_secondary_coverage_exist"] = True
-                    if secondary_coverage_result.get('is_secondary_insurance_exist') is False:
-                        secondary_insurance_plan = CoverageClient.create_insurance_plan(patient_id, coverage)
-                        secondary_insurance_plan.save()
-                        result["is_secondary_insurance"] = secondary_insurance_plan.id
-                    if tertiary_coverage_result.get("is_tertiary_insurance_exist") is True:
-                        result["is_tertiary_insurance_exist"] = True
-                    if tertiary_coverage_result.get('is_tertiary_insurance_exist') is False:
-                        tertiary_insurance_plan = CoverageClient.create_insurance_plan(patient_id, coverage)
-                        tertiary_insurance_plan.save()
-                        result["is_tertiary_insurance"] = tertiary_insurance_plan.id                    
-                        result["created"] = True
-            
+            patient_id_occurrences = sum(1 for entry in existing_coverages.get('entry', []) if entry['resource']['beneficiary']['reference'] == f"Patient/{patient_id}")
+
+            if patient_id_occurrences >= 3:
+                logger.error(f"A patient can only have 3 insurance")
+                return JSONResponse(
+                    content="A patient can only have 3 insurance", status_code=status.HTTP_400_BAD_REQUEST
+                )
+            if existing_coverages:
+                primary_coverage_result = CoverageClient.get_primary_coverage(existing_coverages, patient_id)
+                secondary_coverage_result = CoverageClient.get_secondary_coverage(existing_coverages, patient_id)
+                tertiary_coverage_result = CoverageClient.get_tertiary_coverage(existing_coverages, patient_id)
+                if primary_coverage_result.get('is_primary_insurance_exist') is True:
+                    result["is_primary_coverage_exist"] = True
+                if primary_coverage_result.get('is_primary_insurance_exist') is False and ins_plan.insurance_type == "primary":
+                    primary_insurance_plan = CoverageClient.create_insurance_plan(patient_id, ins_plan)
+                    primary_insurance_plan.save()
+                    result["is_primary_insurance"] = primary_insurance_plan.id
+                if secondary_coverage_result.get('is_secondary_insurance_exist') is True:
+                    result["is_secondary_coverage_exist"] = True
+                if secondary_coverage_result.get('is_secondary_insurance_exist') is False and ins_plan.insurance_type == "secondary":
+                    secondary_insurance_plan = CoverageClient.create_insurance_plan(patient_id, ins_plan)
+                    secondary_insurance_plan.save()
+                    result["is_secondary_insurance"] = secondary_insurance_plan.id
+                if tertiary_coverage_result.get("is_tertiary_insurance_exist") is True:
+                    result["is_tertiary_insurance_exist"] = True
+                if tertiary_coverage_result.get('is_tertiary_insurance_exist') is False and ins_plan.insurance_type == "tertiary":
+                    tertiary_insurance_plan = CoverageClient.create_insurance_plan(patient_id, ins_plan)
+                    tertiary_insurance_plan.save()
+                    result["is_tertiary_insurance"] = tertiary_insurance_plan.id
+            result["created"] = True
             logger.info(f"Added Successfully in DB: {result}")
             return result
         except Exception as e:
@@ -93,6 +112,7 @@ class CoverageClient:
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
+
         
     @staticmethod
     def get_coverage_by_patient_id(patient_id: str):
@@ -167,7 +187,8 @@ class CoverageClient:
                     )
                 insurance_plan_update = CoverageClient.update_insurance_plan(insurance_id, patient_id, updated_coverage) 
                 insurance_plan_update.save()
-                result["insurance_update_id"] = insurance_plan_update.id
+                result["insurance_id"] = insurance_plan_update.id
+                result["Updated"] = True
             else:
                 response_coverage = Coverage.make_request(method="GET", endpoint=f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
                 coverages = response_coverage.json()
@@ -175,7 +196,13 @@ class CoverageClient:
                 if patient_id_occurrences >= 3:
                     logger.error(f"A patient can only have 3 insurance")
                     return JSONResponse(
-                        content="A patient can only have 3 insurance", status_code=status.HTTP_200_OK
+                        content="A patient can only have 3 insurance", status_code=status.HTTP_400_BAD_REQUEST
+                    )
+                if response_coverage.status_code == 404:
+                    logger.info(f"Coverage Not Found: {patient_id}")
+                    return JSONResponse(
+                        content={"error": "No Matching Record"},
+                        status_code=status.HTTP_404_NOT_FOUND
                     )
                 if coverages:
                     primary_coverage_result = CoverageClient.get_primary_coverage(coverages, patient_id)
@@ -186,20 +213,20 @@ class CoverageClient:
                 if primary_coverage_result.get('is_primary_insurance_exist') is False and updated_coverage.insurance_type== "primary":
                     primary_insurance_plan = CoverageClient.create_insurance_plan(patient_id, updated_coverage)
                     primary_insurance_plan.save()
-                    result["is_primary_insurance"] = primary_insurance_plan.id
+                    result["primary_insurance_id"] = primary_insurance_plan.id
                 if secondary_coverage_result.get('is_secondary_insurance_exist') is True:
                     result["is_secondary_coverage_exist"] = True
                 if secondary_coverage_result.get('is_secondary_insurance_exist') is False and updated_coverage.insurance_type== "secondary":
                     secondary_insurance_plan = CoverageClient.create_insurance_plan(patient_id, updated_coverage)
                     secondary_insurance_plan.save()
-                    result["is_secondary_insurance"] = secondary_insurance_plan.id
+                    result["secondary_insurance_id"] = secondary_insurance_plan.id
                 if tertiary_coverage_result.get("is_tertiary_insurance_exist") is True:
                     result["is_tertiary_insurance_exist"] = True
                 if tertiary_coverage_result.get('is_tertiary_insurance_exist') is False and updated_coverage.insurance_type== "tertiary":
                     tertiary_insurance_plan = CoverageClient.create_insurance_plan(patient_id, updated_coverage)
                     tertiary_insurance_plan.save()
-                    result["is_tertiary_insurance"] = tertiary_insurance_plan.id
-                    result["created"] = True                 
+                    result["tertiary_insurance_id"] = tertiary_insurance_plan.id
+                result["created"] = True                 
                 logger.info(f"Added Updated in DB: {result}")
                 return result
 
@@ -353,13 +380,13 @@ class CoverageClient:
             id=insurance_id,
             status=ACTIVE,
             beneficiary=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
-            subscriberId=updated_coverage.policy_number,
-            payor=[Reference(display=updated_coverage.provider_name)],
+            subscriberId=updated_coverage.policyNumber,
+            payor=[Reference(display=updated_coverage.providerName)],
             class_=[
                 Coverage_Class(
                     type=CodeableConcept(coding=[Coding(system=GROUP_SYSTEM, code=GROUP_CODE)]),
                     value=updated_coverage.insurance_type,
-                    name=updated_coverage.group_number
+                    name=updated_coverage.groupNumber
                 )
             ]
         )

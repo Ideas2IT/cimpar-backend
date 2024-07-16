@@ -77,30 +77,23 @@ class PatientModel(BaseModel):
 
 
 class PatientUpdateModel(BaseModel):
-    id : Optional[str] = None
     firstName: str
     middleName: Optional[str] = None
     lastName: str
     gender: str
     dob: str
-    phoneNo: str
+    phoneNo: Optional[str] = None
     alternativeNumber: Optional[str] = ""
-    city: str
-    zipCode: str
-    address: str
-    state: str
-    country: str
-    haveInsurance: bool
+    city: Optional[str] = None
+    zipCode: Optional[str] = None
+    address: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
     race: Optional[str] = None
     ethnicity: Optional[str] = None
     email: Optional[EmailStr] = ""
     height: Optional[str] = None
     weight: Optional[str] = None
-    secondaryInsuranceDetails: InsuranceDetail
-    insuranceDetails: InsuranceDetail
-    isPrimaryMember: bool
-    primaryMemberName: Optional[str] = None
-    primaryMemberDob: Optional[datetime] = None
     _validate_first_name = validator('firstName', allow_reuse=True)(validate_name)
     _validate_middle_name = validator('middleName', allow_reuse=True)(validate_name)
     _validate_last_name = validator('lastName', allow_reuse=True)(validate_name)

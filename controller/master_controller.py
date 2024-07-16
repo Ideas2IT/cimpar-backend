@@ -8,7 +8,7 @@ class MasterClient:
     @staticmethod
     def get_master_data(table_name: str):
         table = {"race": "CimparRace", "state": "CimparState", "lab_test": "CimparLabTest",
-                 "ethnicity": "CimparEthnicity"}
+                 "ethnicity": "CimparEthnicity", "company" : "CimparInsuranceCompany"}
         if table_name not in table:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Kindly, verify the name.")
         try:
@@ -31,3 +31,5 @@ class MasterClient:
             return  JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content=f"Failed to fetch data: {str(e)}")
+        
+
