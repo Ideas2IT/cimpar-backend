@@ -5,12 +5,15 @@ from pydantic import BaseModel, EmailStr, validator
 from datetime import datetime, timezone
 
 
-def validate_date_of_birth(timestamp: int) -> str:
-    timestamp = int(timestamp)
-    dob_datetime = datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
-    if dob_datetime > datetime.now(timezone.utc):
-        raise ValueError('Date of birth cannot be in the future.')
-    return dob_datetime.strftime('%Y-%m-%d') 
+def validate_date_of_birth(timestamp):
+    if timestamp < 0:
+        if abs(timestamp) > 10**10:
+            timestamp = timestamp / 1000.0
+    try:
+        utc_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    except (OverflowError, ValueError) as e:
+        return {"Error": str(e)}
+    return utc_dt.strftime('%Y-%m-%d')
 
 
 def validate_phone_number(phone_number: str) -> str:
@@ -78,10 +81,10 @@ class PatientModel(BaseModel):
 
 class PatientUpdateModel(BaseModel):
     firstName: str
-    middleName: Optional[str] = None
-    lastName: str
+    middleName: Optional[str] = ""
+    lastName: Optional[str] = ""
     gender: str
-    dob: str
+    dob: int
     phoneNo: Optional[str] = None
     alternativeNumber: Optional[str] = ""
     city: Optional[str] = None

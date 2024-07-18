@@ -2,9 +2,9 @@ import re
 from pydantic import BaseModel, validator
 
 def validate_phone_number(phone_number: str) -> str:
-    if not re.match(r'^\+1\d{10}$', phone_number):
-        raise ValueError('Phone number must be in the format +1 followed by 10 digits')
-    return phone_number
+    if not re.match(r'^\d{10}$', phone_number):
+        raise ValueError('Phone number must be 10 digits')
+    return f"+1{phone_number}"
 
 class EncounterModel(BaseModel):
     location: str 

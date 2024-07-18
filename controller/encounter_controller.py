@@ -90,8 +90,8 @@ class EncounterClient:
             if encounter_data.get('total', 0) == 0:
                 logger.info(f"No encounters found for patient: {patient_id}")
                 return JSONResponse(
-                    content={"error": "No encounter found"},
-                    status_code=status.HTTP_404_NOT_FOUND
+                    content=[],
+                    status_code=status.HTTP_200_OK
                 )
             return encounter_data
         except Exception as e:
