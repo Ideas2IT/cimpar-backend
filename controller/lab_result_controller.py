@@ -94,10 +94,7 @@ class ObservationClient:
             lab_result_json = lab_result.json()
             if lab_result_json.get('total', 0) == 0:
                 logger.info(f"No labtest found for patient: {patient_id}")
-                return JSONResponse(
-                    content=[],
-                    status_code=status.HTTP_200_OK
-                )
+                return []
             return lab_result_json
         except Exception as e:
             logger.error(f"Error retrieving Lab Result: {str(e)}")
