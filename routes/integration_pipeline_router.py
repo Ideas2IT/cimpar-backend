@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, Response, status, Body, Query
 import logging
+from typing import Optional
 from aidbox.base import API
 import traceback
 import json
@@ -66,13 +67,9 @@ async def get_immunizations_id(patient_id: str, immunization_id: str, request: R
 
 @router.get("/immunization")
 @permission_required("IMMUNIZATION", "READ")
-async def get_all_immunizations(request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
-    logger.info("Get all immunizations")
-    return HL7ImmunizationClient.get_all_immunizations(page, page_size)
-
-
-@router.get("/immunization/{medication_name}")
-@permission_required("IMMUNIZATION", "READ")
-async def get_immunizations_by_medication_name(name: str, request: Request):
+async def get_immunization(request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100), name: Optional[str] = None):
     logger.info(f"Immunization name: {name}")
-    return HL7ImmunizationClient.get_immunizations_by_medication_name(name)
+    return HL7ImmunizationClient.get_immunization(name, page, page_size)
+
+
+
