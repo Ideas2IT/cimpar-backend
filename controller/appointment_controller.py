@@ -6,7 +6,16 @@ from fastapi.responses import JSONResponse
 from aidbox.base import CodeableConcept, Reference, Coding, Annotation
 from aidbox.resource.appointment import Appointment_Participant
 
-from constants import PATIENT_REFERENCE, INTEND, STATUS, APPOINTMENT_STATUS, PARTICIPANT_STATUS,CURRENT, OTHER
+from constants import (
+    PATIENT_REFERENCE, 
+    INTEND, 
+    STATUS, 
+    APPOINTMENT_STATUS, 
+    PARTICIPANT_STATUS,
+    CURRENT, 
+    OTHER, 
+    APPOINTMENT_SYSTEM
+)
 from services.aidbox_resource_wrapper import Appointment
 from models.appointment_validation import AppoinmentModel
 from controller.patient_controller import PatientClient
@@ -37,6 +46,16 @@ class AppointmentClient:
                 start=app.date_of_appointment,
                 end=app.schedule_time,
                 patientInstruction=app.reason_for_test,
+                serviceType=[CodeableConcept(
+                        coding=[
+                            Coding(
+                                system=APPOINTMENT_SYSTEM,
+                                code=concept.code,
+                                display=concept.display,
+                            )
+                            for concept in app.test_to_take
+                        ]
+                    ),]
             )
             appointment.save()
             response_data["appointment_id"] = appointment.id if appointment else None

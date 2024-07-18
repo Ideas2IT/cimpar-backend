@@ -40,3 +40,4 @@ MOBILE = "home"
 ALTERNATE_NUMBER = "temp"
 RANK_MOBILE = 1
 RANK_ALTERNATE = 2
+APPOINTMENT_SYSTEM = "http://terminology.hl7.org/CodeSystem/v2-0203"

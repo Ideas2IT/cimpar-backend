@@ -394,11 +394,14 @@ class PatientClient:
             for telecom in patient.contact[0].telecom:
                 if telecom.system == "email":
                     extracted_data["email"] = telecom.value
-                elif telecom.system == "phone":
+                elif telecom.use == "home":
                     extracted_data["phoneNo"] = telecom.value
+                elif telecom.use == "temp":
+                    extracted_data["alternativeNumber"] = telecom.value
         else:
             extracted_data["email"] = None
             extracted_data["phoneNo"] = None
+            extracted_data["alternativeNumber"] = None
 
         # Extract race and ethnicity from extensions
         if patient.extension:
@@ -418,8 +421,9 @@ class PatientClient:
         # Extract Height and Weight from extensions
         if patient.communication:
             for communication in patient.communication:
+                extracted_data["height"] = communication.language.text
                 for coding in communication.language.coding:
-                    extracted_data["height"] = coding.code
+                    # extracted_data["height"] = coding.code
                     extracted_data["weight"] = coding.display
         else:
             extracted_data["height"] = None

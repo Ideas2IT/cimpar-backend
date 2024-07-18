@@ -169,9 +169,12 @@ class ConditionClient:
                 method="GET",
                 endpoint=f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}",
             )
-
-            if not response_condition or not response_allergy:
-                return [None, None]
+            if response_condition.json().get('total', 0) == 0 and response_allergy.json().get('total', 0) == 0:
+                logger.info(f"No condition and allergy found for patient: {patient_id}")
+                return JSONResponse(
+                    content=[],
+                    status_code=status.HTTP_200_OK
+                )
             return [response_condition.json(), response_allergy.json()]
 
         except Exception as e:
