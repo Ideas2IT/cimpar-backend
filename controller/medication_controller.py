@@ -124,10 +124,10 @@ class MedicationClient:
             request = response_request.json()
 
             result["is_current_medication_exist"] = statement.get("total", 0) > 0
-            result["current_medication"] = statement if result["is_current_medication_exist"] else {}
+            result["current_medication"] = statement if result["is_current_medication_exist"] else []
 
             result["is_other_medication_exist"] = request.get("total", 0) > 0
-            result["other_medication"] = request if result["is_other_medication_exist"] else {}
+            result["other_medication"] = request if result["is_other_medication_exist"] else []
 
             return result
 

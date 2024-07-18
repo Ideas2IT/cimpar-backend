@@ -6,8 +6,12 @@ class Concept(BaseModel):
     system: str
     display: str
 
+class Test(BaseModel):
+    code: str
+    display: str
+
 class AppoinmentModel(BaseModel):
-    test_to_take: List[Concept]
+    test_to_take: List[Test]
     date_of_appointment: str
     schedule_time: str
     reason_for_test: str
