@@ -9,6 +9,9 @@ def validate_date_of_birth(timestamp):
     if timestamp < 0:
         if abs(timestamp) > 10**10:
             timestamp = timestamp / 1000.0
+    else:
+        if timestamp > 10**10:
+            timestamp = timestamp / 1000.0
     try:
         utc_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
     except (OverflowError, ValueError) as e:
