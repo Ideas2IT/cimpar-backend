@@ -46,10 +46,7 @@ class HL7ImmunizationClient:
             immunizations = response_immunization.json()
             if immunizations.get('total', 0) == 0:
                 logger.info(f"No Immunization found for patient: {patient_id}")
-                return JSONResponse(
-                    content=[],
-                    status_code=status.HTTP_200_OK
-                )
+                return []
             return {"immunizations": immunizations}
         except Exception as e:
             logger.error(f"Unable to get immunization data: {str(e)}")

@@ -13,20 +13,34 @@ class ServiceHistoryClient:
     @staticmethod
     def get_service_history_by_id(patient_id: str, all_service: bool = False, immunization: bool = False, lab_result: bool = False):
         try:
-            service_history = ObservationClient.get_lab_result_by_patient_id(patient_id)
-            immuzation = HL7ImmunizationClient.get_immunizations_by_patient_id(
-                patient_id
-            )
-            if all_service:
-                return ServiceHistoryClient.create_final_values(
-                    service_history, immuzation
-                )
-        
             if lab_result:
-                return ServiceHistoryClient.process_service_history(service_history)
-            
+                service_history = ObservationClient.get_lab_result_by_patient_id(patient_id)
             if immunization:
-                return ServiceHistoryClient.process_immunization(immuzation)
+                immuzation = HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id)
+
+            if all_service:
+                service_history = ObservationClient.get_lab_result_by_patient_id(patient_id)
+                immuzation = HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id)
+                return ServiceHistoryClient.create_final_values(service_history, immuzation)
+            
+            if lab_result and not immunization:
+                if not service_history:  
+                    return []
+                else:
+                    return ServiceHistoryClient.process_lab_result(service_history)
+
+            if immunization and not lab_result:
+                if not immuzation:  
+                    return []
+                else:
+                    return ServiceHistoryClient.process_immunization(immuzation)
+
+            if lab_result and immunization:
+                processed_lab_result = ServiceHistoryClient.process_lab_result(service_history) if service_history else []
+                processed_immunization = ServiceHistoryClient.process_immunization(immuzation) if immuzation else []
+                return processed_lab_result + processed_immunization
+
+            return [] 
         
 
         except Exception as e:
@@ -43,6 +57,8 @@ class ServiceHistoryClient:
 
     def process_immunization(immunization):
         immunization_entries = []
+        if not immunization:
+            return []
         for entry in immunization.get("immunizations", {}).get("entry", []):
             vaccine_display = (
                 entry.get("resource", {})
@@ -63,8 +79,10 @@ class ServiceHistoryClient:
                 )
         return immunization_entries
 
-    def process_service_history(service_history):
+    def process_lab_result(service_history):
         service_history_entries = []
+        if not service_history:
+            return []
         for entry in service_history.get("entry", []):
             service_display = (
                 entry.get("resource", {})
@@ -84,9 +102,17 @@ class ServiceHistoryClient:
                     }
                 )
         return service_history_entries
-
+        
     def create_final_values(service_history, immunization):
-        combined_entries = ServiceHistoryClient.process_immunization(
-            immunization
-        ) + ServiceHistoryClient.process_service_history(service_history)
+        processed_immunization = ServiceHistoryClient.process_immunization(immunization)
+        processed_lab_result = ServiceHistoryClient.process_lab_result(service_history)
+        if processed_immunization and processed_lab_result:
+            combined_entries = processed_immunization + processed_lab_result
+        elif processed_immunization:
+            combined_entries = processed_immunization
+        elif processed_lab_result:
+            combined_entries = processed_lab_result
+        else:
+            combined_entries = []
         return combined_entries
+
