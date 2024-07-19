@@ -163,7 +163,7 @@ class PatientClient:
             if not User.get({"id": patient.id}):
                 user = UserModel(email=pat.email, id=patient.id,
                             name=pat.firstName + " " + pat.middleName + " "+ pat.lastName)
-                response_data = AuthClient.create(user)
+                response_data = AuthClient.create(user, pat)
             logger.info(f"Added Successfully in DB: {result}")
             return result
         except Exception as e:
