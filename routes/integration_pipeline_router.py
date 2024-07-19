@@ -53,14 +53,14 @@ async def hl7v2_vxu_v04(request: Request, raw_data: str =Body(..., media_type="t
 
 @router.get("/immunization/{patient_id}")
 @permission_required("IMMUNIZATION", "READ")
-async def get_immunizations_by_patient_id(patient_id: str, request: Request):
+async def get_immunizations_by_patient_id(patient_id: str, page: int, count: int, request: Request):
     logger.info(f"Patient ID: {patient_id}")
-    return HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id)
+    return HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id, page, count)
 
 
 @router.get("/immunization/{patient_id}/{immunization_id}")
 @permission_required("IMMUNIZATION", "READ")
-async def get_immunizations_id(patient_id: str, immunization_id: str, request: Request):
+async def get_immunizations_id(patient_id: str, immunization_id: str ,request: Request):
     logger.info(f"Patient ID: {patient_id}")
     return HL7ImmunizationClient.get_immunizations_by_id(patient_id, immunization_id)
 
