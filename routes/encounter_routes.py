@@ -21,9 +21,9 @@ async def create_encounter(encounter: EncounterModel, patient_id, request: Reque
 
 @router.get("/encounter/{patient_id}")
 @permission_required("ENCOUNTER", "READ")
-async def get_encounter_by_patient_id(patient_id: str, request: Request):
+async def get_encounter_by_patient_id(patient_id: str, page: int, count: int ,request: Request):
     logger.info(f"Encounter ID:{patient_id}")
-    return EncounterClient.get_encounter_by_patient_id(patient_id)
+    return EncounterClient.get_encounter_by_patient_id(patient_id, page, count)
 
 
 @router.get("/encounter/{patient_id}/{encounter_id}")

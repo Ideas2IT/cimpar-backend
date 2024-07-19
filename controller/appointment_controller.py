@@ -1,5 +1,6 @@
 import logging
 import traceback
+import json
 from fastapi import status
 from fastapi.responses import JSONResponse
 
@@ -25,6 +26,8 @@ from services.aidbox_resource_wrapper import MedicationStatement
 from services.aidbox_resource_wrapper import Condition
 from utils.common_utils import paginate
 from services.aidbox_service import AidboxApi
+from controller.lab_result_controller import ObservationClient
+from controller.insurance_controller import CoverageClient
 
 logger = logging.getLogger("log")
 
@@ -341,10 +344,71 @@ class AppointmentClient:
             )
 
     @staticmethod
-    def get_appointment(appointment_by_name: str, state_date:str, end_date: str, all_appointment: bool, page: str, page_size: str):
+    def get_appointment(patient_id: str, name: str, appointment_by_name: str, state_date:str, end_date: str, all_appointment: bool, lab_test: str, page: str, page_size: str):
         if appointment_by_name:
             return AppointmentClient.get_by_patient_name(appointment_by_name, page, page_size)
         if all_appointment:
-            return AppointmentClient.get_all_appointment(page, page_size)
+            return AppointmentClient.get_appointment_detail(page, page_size)
+        if lab_test:
+            return ObservationClient.get_lab_result_by_name(patient_id, lab_test, page, page_size)
         else:
             return AppointmentClient.get_appointment_by_date(state_date, end_date, page, page_size)
+         
+
+    @staticmethod
+    def get_appointment_detail(page, page_size):
+        results = [] 
+        total_coverage = 0
+        appointment = AppointmentClient.get_all_appointment(page, page_size)
+        appointment_value = AppointmentClient.get_patient_id_and_service_type_from_appointment(json.loads(appointment.body))        
+        if appointment_value:
+            for patient in appointment_value:
+                patient_id = patient.get("patient_id")
+                patient_details = PatientClient.get_patient_by_id(patient_id)
+                patient_result = {
+                    "appointmentId": patient.get("appointment_id"),
+                    "patientId": patient_details.get("id"),
+                    "name": (patient_details.get('firstName', '') + " " + patient_details.get('lastName', '')).strip(),
+                    "dob": patient_details.get('dob'),
+                    "gender": patient_details.get("gender"),
+                    "appointmentFor": patient.get("service_type"),
+                    'start': patient.get("start"),
+                    'end': patient.get("end") 
+                }
+                coverage_response = CoverageClient.get_coverage_by_patient_id(patient_id)
+                total_coverage = 0
+                if coverage_response:
+                    if isinstance(coverage_response, dict) and 'coverage' in coverage_response:
+                        total_coverage = coverage_response.get('coverage', {}).get('total', 0)
+                    elif isinstance(coverage_response, list) and len(coverage_response) > 0:
+                        total_coverage = coverage_response[0].get('coverage', {}).get('total', 0)
+                patient_result["insurance"] = "No" if total_coverage == 0 else "Yes"
+                results.append(patient_result)
+        return JSONResponse(
+            content=results,
+            status_code=status.HTTP_200_OK
+        )
+                
+
+    def get_patient_id_and_service_type_from_appointment(appointment_value):
+        patient_service_types = []
+        for entry in appointment_value['data']:
+            appointment_id = entry['resource'].get('id', '')
+            start_time = entry['resource'].get('start', '')
+            end_time = entry['resource'].get('end', '')
+            for participant in entry['resource']['participant']:
+                if participant['actor'].get('reference', ''):
+                    patient_id = participant['actor']['reference'].split('/')[-1]
+                    service_types = entry['resource'].get('serviceType', [])
+                    for service_type in service_types:
+                        for coding in service_type.get('coding', []):
+                            service_type_display = coding.get('display', '')
+                            patient_service_types.append({
+                                'patient_id': patient_id,
+                                'service_type': service_type_display,
+                                'appointment_id': appointment_id,
+                                'start': start_time,
+                                'end': end_time
+                            })
+        return patient_service_types
+

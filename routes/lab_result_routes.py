@@ -19,13 +19,13 @@ async def get_lab_result_by_id(patient_id: str, lab_result_id: str, request: Req
 
 @router.get("/observation")
 @permission_required("OBSERVATION", "READ")
-async def get_lab_result(request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100), name: Optional[str] = None):
+async def get_lab_result(request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100), name: Optional[str] = None, patient_id: Optional[str] = None):
     logger.info(f"Lab Result Name:{name}")
-    return ObservationClient.get_lab_result(page, page_size, name)
+    return ObservationClient.get_lab_result(page, page_size, name, patient_id)
 
 
 @router.get("/observation/{patient_id}")
 @permission_required("OBSERVATION", "READ")
-async def get_lab_result_by_patient_id(patient_id: str, request: Request):
+async def get_lab_result_by_patient_id(patient_id: str, request: Request, page: int, count: int):
     logger.info(f"Service History ID:{patient_id}")
-    return ObservationClient.get_lab_result_by_patient_id(patient_id)
+    return ObservationClient.get_lab_result_by_patient_id(patient_id, page, count)

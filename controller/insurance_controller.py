@@ -122,10 +122,7 @@ class CoverageClient:
             
             if coverage.get('total', 0) == 0:
                 logger.info(f"No Coverage found for patient: {patient_id}")
-                return JSONResponse(
-                    content=[],
-                    status_code=status.HTTP_200_OK
-                )
+                return []
             return {"coverage": coverage}
         except Exception as e:
             logger.error(f"Unable to get coverage data: {str(e)}")
