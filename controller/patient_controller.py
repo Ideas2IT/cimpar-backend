@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from aidbox.base import HumanName, Address, ContactPoint, Extension, Coding, Meta, Identifier, CodeableConcept
 from aidbox.resource.patient import Patient_Contact, Patient_Communication
+from aidbox.resource.patient import Patient as PatientWrapper
 
 from constants import (
     PHONE_SYSTEM,
@@ -49,26 +50,28 @@ class PatientClient:
             patient_id_update = get_md5(
                 [pat.firstName, pat.lastName, pat.dob]
             )
-
             if Patient.get({"id": patient_id_update}):
-                return HTTPException(
-                    detail=f"Error: Patient with id {patient_id_update} already exists",
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
+                result_data = {}
+                patient_update = PatientClient.update_patient_by_id(pat, patient_id_update, from_patient=True)
+                result_data["id"] = patient_update.get("id")
+                if pat.haveInsurance:
+                    coverage_values = CoverageClient.create_coverage(pat, patient_id_update, from_patient=True)
+                    if coverage_values:
+                        if coverage_values.get('is_primary_insurance'):
+                            result_data['is_primary_insurance'] = coverage_values.get('is_primary_insurance')
+                        if coverage_values.get('is_secondary_insurance'):
+                            result_data['is_secondary_insurance'] = coverage_values.get('is_secondary_insurance')
+                        if coverage_values.get('is_primary_coverage_exist'):
+                            result_data['is_primary_coverage_exist'] = coverage_values.get('is_primary_coverage_exist')
+                        if coverage_values.get('is_secondary_coverage_exist'):
+                            result_data['is_secondary_coverage_exist'] = coverage_values.get('is_secondary_coverage_exist')
+                result_data["Updated"] = patient_update.get("Updated")
+                if not User.get({"id": patient_id_update}):
+                    user = UserModel(email=pat.email, id=patient_id_update,
+                                name=pat.firstName + " " + pat.middleName + " "+ pat.lastName)
+                    response_data = AuthClient.create(user, pat)
+                return result_data
             result = {}
-
-            # if not pat.createAccount:
-            #     update_patient = PatientClient.update_patient_by_id(pat, pat.id, from_patient=True)
-            #     result["id"] = update_patient.get("id")
-            #     update_coverage = CoverageClient.create_coverage(pat, pat.id, from_patient=True)
-            #     if update_coverage:
-            #         result["is_primary_insurance"] = update_coverage.get("is_primary_insurance")
-            #         result["is_secondary_insurance"] = update_coverage.get("is_secondary_insurance")  
-            #     result['Updated'] = True              
-            #     return JSONResponse(
-            #         content=result,
-            #         status_code=status.HTTP_200_OK
-            #     )
 
             height = pat.height if pat.height else ""
             weight = pat.weight if pat.weight else ""
@@ -228,13 +231,15 @@ class PatientClient:
             )
 
     @staticmethod
-    def update_patient_by_id(pat: PatientUpdateModel, patient_id: str):
+    def update_patient_by_id(pat: PatientUpdateModel, patient_id: str, from_patient=False):
         try:
             height = pat.height if pat.height else ""
             weight = pat.weight if pat.weight else ""            
             alternative_number = pat.alternativeNumber if pat.alternativeNumber else ""
 
-            patient = Patient(
+            Patient_resource = PatientWrapper if from_patient else Patient
+
+            patient = Patient_resource(
                 id=patient_id,
                 name=[
                     HumanName(
