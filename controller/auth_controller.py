@@ -11,6 +11,7 @@ import os
 from models.auth_validation import (
     UserModel, TokenModel, RotateToken, User, AccessPolicy, CimparRole, CimparPermission, ChangePassword, UserToken
 )
+from models.patient_validation import PatientModel
 from services.aidbox_service import AidboxApi
 from utils.common_utils import generate_permission_id, send_email
 
@@ -19,8 +20,9 @@ logger = logging.getLogger("log")
 
 class AuthClient:
     @staticmethod
-    def create(user: UserModel):
+    def create(user: UserModel, pat: PatientModel):
         try:
+            print("pat", pat)
             logger.info("Creating the user: %s" % user)
             user_id = user.id
             if user.role.lower() == "admin":
@@ -54,20 +56,21 @@ class AuthClient:
             user_token.save()
             confirm_link = os.path.join(os.environ.get("SET_PASSWORD_URL"), str(token))
             image_host = os.environ.get("IMAGE_HOST")
-            with open('templates/email.html', 'r', encoding='utf-8') as file:
-                email_template = file.read()
-            email_body = email_template.replace('{{name}}', user.name).replace(
-                '{{email}}', user.email).replace('{{confirm_link}}', confirm_link).replace(
-                '{{host}}', image_host)
-            # Email send
-            if not send_email(user.email, email_body):
-                raise Exception("Failed to send confirmation email")
-            return {
-                "id": user_id,
-                "email": user.email,
-                #"token": token,
-                "message": "Signup successful! Check your email to set your password."
-            }
+            if pat.createAccount:
+                with open('templates/email.html', 'r', encoding='utf-8') as file:
+                    email_template = file.read()
+                email_body = email_template.replace('{{name}}', user.name).replace(
+                    '{{email}}', user.email).replace('{{confirm_link}}', confirm_link).replace(
+                    '{{host}}', image_host)
+                # Email send
+                if not send_email(user.email, email_body):
+                    raise Exception("Failed to send confirmation email")
+                return {
+                    "id": user_id,
+                    "email": user.email,
+                    #"token": token,
+                    "message": "Signup successful! Check your email to set your password."
+                }
         except Exception as e:
             logger.error(f"Unable to create a user: {str(e)}")
             logger.error(traceback.format_exc())
