@@ -42,12 +42,18 @@ class HL7ImmunizationClient:
     @staticmethod
     def get_immunizations_by_patient_id(patient_id: str, page: int, count: int):
         try:
+            result = {}
             response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization?patient=Patient/{patient_id}&_page={page}&_count={count}")
             immunizations = response_immunization.json()
             if immunizations.get('total', 0) == 0:
                 logger.info(f"No Immunization found for patient: {patient_id}")
                 return []
-            return {"immunizations": immunizations}
+            result["immunizations"] = immunizations
+            result["current_page"] = page
+            result["page_size"] = count
+            result["total_items"] = immunizations.get('total', 0)
+            result["total_pages"] = (int(immunizations["total"]) // count) + 1
+            return result
         except Exception as e:
             logger.error(f"Unable to get immunization data: {str(e)}")
             logger.error(traceback.format_exc())
@@ -110,9 +116,10 @@ class HL7ImmunizationClient:
             )
         
     @staticmethod
-    def get_by_vaccine_name(name: str):
+    def get_by_vaccine_name(name: str, page:int, count:int):
         try:
-            response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization/?.vaccineCode.coding.0.display$contains={name}")
+            result = {}
+            response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization/?.vaccineCode.coding.0.display$contains={name}&_page={page}&_count={count}")
             immunizations = response_immunization.json()
             if immunizations.get('total', 0) == 0:
                 logger.info(f"No Immunization found for name: {name}")
@@ -120,7 +127,12 @@ class HL7ImmunizationClient:
                     content=[],
                     status_code=status.HTTP_200_OK
                 )
-            return {"immunizations": immunizations}
+            result["immunizations"] = immunizations
+            result["current_page"] = page
+            result["page_size"] = count
+            result["total_items"] = immunizations.get('total', 0)
+            result["total_pages"] = (int(immunizations["total"]) // count) + 1
+            return result
         except Exception as e:
             logger.error(f"Unable to get immunization data: {str(e)}")
             logger.error(traceback.format_exc())
@@ -138,7 +150,7 @@ class HL7ImmunizationClient:
     @staticmethod
     def get_immunization(name:str, page:int, page_size:int):
         if name:
-            return HL7ImmunizationClient.get_by_vaccine_name(name)
+            return HL7ImmunizationClient.get_by_vaccine_name(name, page, page_size)
         return HL7ImmunizationClient.get_all_immunizations(page, page_size)
 
     

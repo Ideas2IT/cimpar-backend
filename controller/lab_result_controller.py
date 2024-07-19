@@ -65,16 +65,22 @@ class ObservationClient:
     @staticmethod
     def get_lab_result_by_name(patient_id: str, name: str, page: int, page_size: int):
         try:
+            result = {}
             lab_result = Observation.make_request(method="GET", 
                 endpoint=f"/fhir/Observation?subject=Patient/{patient_id}&.code.coding.0.display$contains={name}&_page={page}&_count={page_size}")
             lab_result_json = lab_result.json()
+            result["data"] = lab_result_json
+            result["current_page"] = page
+            result["page_size"] = page_size
+            result["total_items"] = lab_result_json.get('total', 0)
+            result["total_pages"] = (int(lab_result_json["total"]) // page_size) + 1
             if lab_result.status_code == 404:
                 logger.info(f"Lab Result Not Found: {name}")
                 return JSONResponse(
                     content={"error": "No Matching Record"},
                     status_code=status.HTTP_404_NOT_FOUND
                 )
-            return lab_result_json
+            return result
         except Exception as e:
             logger.error(f"Error retrieving Lab Result: {str(e)}")
             logger.error(traceback.format_exc())
@@ -91,12 +97,18 @@ class ObservationClient:
     @staticmethod
     def get_lab_result_by_patient_id(patient_id: str, page: int, page_size: int):
         try:
+            result = {}
             lab_result = Observation.make_request(method="GET", endpoint=f"/fhir/Observation?subject=Patient/{patient_id}&_page={page}&_count={page_size}")
             lab_result_json = lab_result.json()
             if lab_result_json.get('total', 0) == 0:
                 logger.info(f"No labtest found for patient: {patient_id}")
                 return []
-            return lab_result_json
+            result["data"] = lab_result_json
+            result["current_page"] = page
+            result["page_size"] = page_size
+            result["total_items"] = lab_result_json.get('total', 0)
+            result["total_pages"] = (int(lab_result_json["total"]) // page_size) + 1
+            return result
         except Exception as e:
             logger.error(f"Error retrieving Lab Result: {str(e)}")
             logger.error(traceback.format_exc())
