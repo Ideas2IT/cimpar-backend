@@ -11,16 +11,16 @@ logger = logging.getLogger("log")
 
 class ServiceHistoryClient:
     @staticmethod
-    def get_service_history_by_id(patient_id: str, all_service: bool = False, immunization: bool = False, lab_result: bool = False):
+    def get_service_history_by_id(patient_id: str, page: int, count: int, all_service: bool = False, immunization: bool = False, lab_result: bool = False):
         try:
             if lab_result:
-                service_history = ObservationClient.get_lab_result_by_patient_id(patient_id)
+                service_history = ObservationClient.get_lab_result_by_patient_id(patient_id, page, count)
             if immunization:
-                immuzation = HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id)
+                immuzation = HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id, page, count)
 
             if all_service:
-                service_history = ObservationClient.get_lab_result_by_patient_id(patient_id)
-                immuzation = HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id)
+                service_history = ObservationClient.get_lab_result_by_patient_id(patient_id, page, count)
+                immuzation = HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id, page, count)
                 return ServiceHistoryClient.create_final_values(service_history, immuzation)
             
             if lab_result and not immunization:

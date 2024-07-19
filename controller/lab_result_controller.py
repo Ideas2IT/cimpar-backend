@@ -63,9 +63,10 @@ class ObservationClient:
             )
         
     @staticmethod
-    def get_lab_result_by_name(name: str):
+    def get_lab_result_by_name(patient_id: str, name: str, page: int, page_size: int):
         try:
-            lab_result = Observation.make_request(method="GET", endpoint=f"/fhir/Observation?.code.coding.0.display$contains={name}")
+            lab_result = Observation.make_request(method="GET", 
+                endpoint=f"/fhir/Observation?subject=Patient/{patient_id}&.code.coding.0.display$contains={name}&_page={page}&_count={page_size}")
             lab_result_json = lab_result.json()
             if lab_result.status_code == 404:
                 logger.info(f"Lab Result Not Found: {name}")
@@ -88,9 +89,9 @@ class ObservationClient:
             )
         
     @staticmethod
-    def get_lab_result_by_patient_id(patient_id: str):
+    def get_lab_result_by_patient_id(patient_id: str, page: int, page_size: int):
         try:
-            lab_result = Observation.make_request(method="GET", endpoint=f"/fhir/Observation?subject=Patient/{patient_id}")
+            lab_result = Observation.make_request(method="GET", endpoint=f"/fhir/Observation?subject=Patient/{patient_id}&_page={page}&_count={page_size}")
             lab_result_json = lab_result.json()
             if lab_result_json.get('total', 0) == 0:
                 logger.info(f"No labtest found for patient: {patient_id}")
@@ -110,7 +111,7 @@ class ObservationClient:
             )
         
     @staticmethod
-    def get_lab_result(page: int, page_size: int, name: str):
+    def get_lab_result(page: int, page_size: int, name: str, patient_id: str, ):
         if name:
-            return ObservationClient.get_lab_result_by_name(name)
+            return ObservationClient.get_lab_result_by_name(patient_id ,name, page, page_size)
         return ObservationClient.get_all_lab_result(page, page_size)

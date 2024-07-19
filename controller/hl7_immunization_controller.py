@@ -40,9 +40,9 @@ class HL7ImmunizationClient:
             )
 
     @staticmethod
-    def get_immunizations_by_patient_id(patient_id: str):
+    def get_immunizations_by_patient_id(patient_id: str, page: int, count: int):
         try:
-            response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization/?patient=Patient/{patient_id}")
+            response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization?patient=Patient/{patient_id}&_page={page}&_count={count}")
             immunizations = response_immunization.json()
             if immunizations.get('total', 0) == 0:
                 logger.info(f"No Immunization found for patient: {patient_id}")

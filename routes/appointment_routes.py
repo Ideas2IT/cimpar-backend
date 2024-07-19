@@ -44,22 +44,23 @@ async def get_by_id(
     )
 
 
-@router.get("/appointments/patient_name/{appointment_by_name}")
-@permission_required("APPOINTMENT", "READ")
-async def get_by_patient_name(appointment_by_name: str, request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
-    logger.info(f"fetch appointment for {appointment_by_name}")
-    return AppointmentClient.get_by_patient_name(appointment_by_name, page, page_size)
-
-
 @router.get("/appointment/")
 @permission_required("APPOINTMENT", "READ")
 async def get_appointment(
         request: Request,
+        patient_id: Optional[str] = None,
+        name:  Optional[str] = None,
         appointment_by_name: Optional[str] = None,
         state_date: Optional[str] = None,
         end_date: Optional[str] = None,
         all_appointment: Optional[bool] = None,
+        lab_test: Optional[str] = None, 
         page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
     logger.info(f"fetching values")
-    return AppointmentClient.get_appointment(appointment_by_name, state_date, end_date, all_appointment, page,
-                                             page_size)
+    return AppointmentClient.get_appointment(patient_id, name, appointment_by_name, state_date, end_date, 
+        all_appointment, lab_test, page, page_size)
+
+
+
+
+
