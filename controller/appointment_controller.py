@@ -344,13 +344,13 @@ class AppointmentClient:
             )
 
     @staticmethod
-    def get_appointment(patient_id: str, name: str, appointment_by_name: str, state_date:str, end_date: str, all_appointment: bool, lab_test: str, page: str, page_size: str):
-        if appointment_by_name:
-            return AppointmentClient.get_by_patient_name(appointment_by_name, page, page_size)
+    def get_appointment(patient_name: str, state_date:str, end_date: str, all_appointment: bool, lab_test: str, page: str, page_size: str):
+        if patient_name:
+            return AppointmentClient.get_by_patient_name(patient_name, page, page_size)
         if all_appointment:
             return AppointmentClient.get_appointment_detail(page, page_size)
         if lab_test:
-            return ObservationClient.get_lab_result_by_name(patient_id, lab_test, page, page_size)
+            return ObservationClient.get_lab_result_by_name(lab_test, page, page_size)
         else:
             return AppointmentClient.get_appointment_by_date(state_date, end_date, page, page_size)
          
@@ -400,15 +400,18 @@ class AppointmentClient:
                 if participant['actor'].get('reference', ''):
                     patient_id = participant['actor']['reference'].split('/')[-1]
                     service_types = entry['resource'].get('serviceType', [])
+                    service_type_displays = []  
                     for service_type in service_types:
                         for coding in service_type.get('coding', []):
                             service_type_display = coding.get('display', '')
-                            patient_service_types.append({
-                                'patient_id': patient_id,
-                                'service_type': service_type_display,
-                                'appointment_id': appointment_id,
-                                'start': start_time,
-                                'end': end_time
-                            })
+                            service_type_displays.append(service_type_display)  
+                    combined_service_type = ', '.join(service_type_displays)
+                    patient_service_types.append({
+                        'patient_id': patient_id,
+                        'service_type': combined_service_type, 
+                        'appointment_id': appointment_id,
+                        'start': start_time,
+                        'end': end_time
+                    })
         return patient_service_types
 
