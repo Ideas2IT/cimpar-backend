@@ -14,11 +14,13 @@ logger = logging.getLogger("log")
 async def get_service_history_by_id(
     request: Request,
     patient_id: str,
+    page: int,
+    count: int,
     all_service: Optional[bool] = None,
     immunization: Optional[bool] = None,
     lab_result: Optional[bool] = None,
 ):
     logger.info(f"Service History ID:{patient_id}")
     return ServiceHistoryClient.get_service_history_by_id(
-        patient_id, all_service, immunization, lab_result
+        patient_id, page, count, all_service, immunization, lab_result
     )

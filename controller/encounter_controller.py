@@ -83,9 +83,9 @@ class EncounterClient:
             )
 
     @staticmethod
-    def get_encounter_by_patient_id(patient_id: str):
+    def get_encounter_by_patient_id(patient_id: str, page: int, count: int):
         try:
-            encounter = Encounter.make_request(method="GET", endpoint=f"/fhir/Encounter/?subject=Patient/{patient_id}")
+            encounter = Encounter.make_request(method="GET", endpoint=f"/fhir/Encounter/?subject=Patient/{patient_id}&_page={page}&_count={count}")
             encounter_data = encounter.json()
             if encounter_data.get('total', 0) == 0:
                 logger.info(f"No encounters found for patient: {patient_id}")
