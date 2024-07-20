@@ -74,12 +74,9 @@ class ObservationClient:
             result["page_size"] = page_size
             result["total_items"] = lab_result_json.get('total', 0)
             result["total_pages"] = (int(lab_result_json["total"]) // page_size) + 1
-            if lab_result.status_code == 404:
-                logger.info(f"Lab Result Not Found: {name}")
-                return JSONResponse(
-                    content={"error": "No Matching Record"},
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
+            if lab_result_json.get('total', 0) == 0:
+                logger.info(f"Lab Result Not Found: {name} and {patient_id}")
+                return []
             return result
         except Exception as e:
             logger.error(f"Error retrieving Lab Result: {str(e)}")

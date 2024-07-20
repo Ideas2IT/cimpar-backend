@@ -53,7 +53,7 @@ class PatientClient:
             if Patient.get({"id": patient_id_update}):
                 result_data = {}
                 patient_update = PatientClient.update_patient_by_id(pat, patient_id_update, from_patient=True)
-                result_data["id"] = patient_update.get("id")
+                result_data["id"] = patient_update.get("id")              
                 if pat.haveInsurance:
                     coverage_values = CoverageClient.create_coverage(pat, patient_id_update, from_patient=True)
                     if coverage_values:
