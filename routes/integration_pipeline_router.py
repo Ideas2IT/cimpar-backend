@@ -72,4 +72,14 @@ async def get_immunization(request: Request, page: int = Query(1, ge=1), page_si
     return HL7ImmunizationClient.get_immunization(name, page, page_size)
 
 
-
+@router.get("/immunization/vaccine_name/{patient_id}/{vaccine_name}")
+@permission_required("IMMUNIZATION", "READ")
+async def find_immunizations_by_patient_id(
+    request: Request, 
+    patient_id: Optional[str] = None,
+    name: Optional[str] = None, 
+    page: int = Query(1, ge=1), 
+    count: int = Query(10, ge=1, le=100)
+    ):
+    logger.info(f"Immunization for {patient_id} and vaccine for {name}")
+    return HL7ImmunizationClient.find_immunizations_by_patient_id(patient_id, name, page, count)
