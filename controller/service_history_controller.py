@@ -1,5 +1,6 @@
 from fastapi import status
 from fastapi.responses import JSONResponse
+from typing import Optional
 import logging
 import traceback
 
@@ -11,7 +12,7 @@ logger = logging.getLogger("log")
 
 class ServiceHistoryClient:
     @staticmethod
-    def get_service_history_by_id(patient_id: str, page: int, count: int, all_service: bool = False, immunization: bool = False, lab_result: bool = False):
+    def get_service_history_by_id(patient_id: str, page: int, count: int, all_service: bool = False, immunization: bool = False, lab_result: bool = False, name: Optional[str] = None):
         try:
             if lab_result:
                 service_history = ObservationClient.get_lab_result_by_patient_id(patient_id, page, count)
@@ -35,9 +36,18 @@ class ServiceHistoryClient:
                 processed_lab_result = ServiceHistoryClient.process_lab_result(service_history) if service_history else []
                 processed_immunization = ServiceHistoryClient.process_immunization(immuzation) if immuzation else []
                 return processed_lab_result + processed_immunization
-
+            if name:
+                test_by_name = ObservationClient.get_lab_result_by_name(patient_id, name, page, count)
+                vaccine_by_name = HL7ImmunizationClient.find_immunizations_by_patient_id(patient_id, name, page, count)
+                if isinstance(test_by_name, list) and isinstance(vaccine_by_name, list) and not test_by_name and not vaccine_by_name:
+                    return []
+                if isinstance(test_by_name, list) and not test_by_name:
+                    test_by_name = {}
+                if isinstance(vaccine_by_name, list) and not vaccine_by_name:
+                    vaccine_by_name = {}
+                merged_results = {**test_by_name, **vaccine_by_name}
+                return merged_results
             return [] 
-        
 
         except Exception as e:
             logger.error(f"Error retrieving Service History: {str(e)}")

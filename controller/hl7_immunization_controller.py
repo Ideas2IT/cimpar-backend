@@ -152,5 +152,34 @@ class HL7ImmunizationClient:
         if name:
             return HL7ImmunizationClient.get_by_vaccine_name(name, page, page_size)
         return HL7ImmunizationClient.get_all_immunizations(page, page_size)
+    
+
+    @staticmethod
+    def find_immunizations_by_patient_id(patient_id: str, name: str, page:int, count:int):
+        try:
+            result = {}
+            response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization?patient=Patient/{patient_id}&.vaccineCode.coding.0.display$contains={name}&_page={page}&_count={count}")
+            immunizations = response_immunization.json()
+            if immunizations.get('total', 0) == 0:
+                logger.info(f"No Immunization found for name: {name} and patient {patient_id}")
+                return []
+            result["data"] = immunizations
+            result["current_page"] = page
+            result["page_size"] = count
+            result["total_items"] = immunizations.get('total', 0)
+            result["total_pages"] = (int(immunizations["total"]) // count) + 1
+            return result
+        except Exception as e:
+            logger.error(f"Unable to get immunization data: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to retrieve Immunization",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
 
     
