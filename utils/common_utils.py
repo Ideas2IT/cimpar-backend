@@ -12,6 +12,7 @@ from typing import Type, TypeVar, Dict, Any
 
 from HL7v2 import get_md5
 
+
 T = TypeVar('T')
 
 logger = logging.getLogger("log")
