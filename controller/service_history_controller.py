@@ -6,50 +6,31 @@ import traceback
 
 from controller.lab_result_controller import ObservationClient
 from controller.hl7_immunization_controller import HL7ImmunizationClient
+from services.aidbox_service import AidboxApi
 
 logger = logging.getLogger("log")
 
 
 class ServiceHistoryClient:
     @staticmethod
-    def get_service_history_by_id(patient_id: str, page: int, count: int, all_service: bool = False, immunization: bool = False, lab_result: bool = False, name: Optional[str] = None):
+    def get_service_history(patient_id: str, service_type, name, page, count):
         try:
-            if lab_result:
-                service_history = ObservationClient.get_lab_result_by_patient_id(patient_id, page, count)
-            if immunization:
-                immuzation = HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id, page, count)
-            if all_service:
-                service_history = ObservationClient.get_lab_result_by_patient_id(patient_id, page, count)
-                immuzation = HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id, page, count)
-                return ServiceHistoryClient.create_final_values(service_history, immuzation)
-            if lab_result and not immunization:
-                if not service_history:  
-                    return []
-                else:
-                    return ServiceHistoryClient.process_lab_result(service_history)
-            if immunization and not lab_result:
-                if not immuzation:  
-                    return []
-                else:
-                    return ServiceHistoryClient.process_immunization(immuzation)
-            if lab_result and immunization:
-                processed_lab_result = ServiceHistoryClient.process_lab_result(service_history) if service_history else []
-                processed_immunization = ServiceHistoryClient.process_immunization(immuzation) if immuzation else []
-                return processed_lab_result + processed_immunization
-            if name:
-                test_by_name = ObservationClient.get_lab_result_by_name(patient_id, name, page, count)
-                vaccine_by_name = HL7ImmunizationClient.find_immunizations_by_patient_id(patient_id, name, page, count)
-                processed_results = {}
-                if test_by_name:
-                    processed_lab_results = ServiceHistoryClient.extract_lab_result(test_by_name) 
-                    processed_results.update(processed_lab_results)
-                
-                if vaccine_by_name:
-                    processed_immunization_results = ServiceHistoryClient.extract_immunization_entries(vaccine_by_name)
-                    processed_results.update(processed_immunization_results)
-                return processed_results if processed_results else []
-            return [] 
-
+            if service_type.lower() == "lab_result":
+                final_response = ServiceHistoryClient.custom_query_with_pagination(
+                    "filteredObservation", patient_id, name, page, count
+                )
+            elif service_type.lower() == "immunization":
+                final_response = ServiceHistoryClient.custom_query_with_pagination(
+                    "filteredImmunization", patient_id, name, page, count
+                )
+            else:
+                final_response = ServiceHistoryClient.custom_query_with_pagination(
+                    "filteredImmunizationObservation", patient_id, name, page, count
+                )
+            return JSONResponse(
+                content=final_response,
+                status_code=status.HTTP_200_OK
+            )
         except Exception as e:
             logger.error(f"Error retrieving Service History: {str(e)}")
             logger.error(traceback.format_exc())
@@ -57,7 +38,6 @@ class ServiceHistoryClient:
                 "error": "Unable to retrieve Service History",
                 "details": str(e),
             }
-
             return JSONResponse(
                 content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
@@ -207,3 +187,38 @@ class ServiceHistoryClient:
             "total_pages": service_history.get('total_pages')
         }
 
+    @staticmethod
+    def custom_query_with_pagination(query_name: str, patient_id: str, search: str, page: int, page_size: int):
+        limit = page_size
+        offset = (page - 1) * page_size
+        response_name = AidboxApi.make_request(
+            method="GET",
+            endpoint=f"/$query/{query_name}?patient_id={patient_id}&search={search}&limit={limit}&offset={offset}"
+        )
+        data = response_name.json()
+        count_res = AidboxApi.make_request(
+            method="GET",
+            endpoint=f"/$query/{query_name}Count?patient_id={patient_id}&search={search}&limit={limit}&offset={offset}"
+        )
+        count_resp = count_res.json()
+        total_count = count_resp["data"][0]["count"]
+        formatted_data = [
+            {
+                "resource": {
+                    "id": item["id"],
+                    **item["resource"]
+                }
+            } for item in data.get('data', [])
+        ]
+        final_response = {
+            "data": formatted_data,
+            "pagination": {
+                "current_page": page,
+                "page_size": page_size,
+                "total_items": total_count,
+                "total_pages": (total_count // page_size) + (1 if total_count % page_size != 0 else 0)
+            }
+        }
+        if not data.get('data', []):
+            final_response = []
+        return final_response
