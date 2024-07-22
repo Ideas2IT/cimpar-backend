@@ -123,4 +123,4 @@ class ObservationClient:
     def get_lab_result(page: int, page_size: int, name: str, patient_id: str, ):
         if name:
             return ObservationClient.get_lab_result_by_name(patient_id ,name, page, page_size)
-        return ObservationClient.get_all_lab_result(page, page_size)
+        return ObservationClient.get_lab_result_by_patient_id(patient_id, page, page_size)
