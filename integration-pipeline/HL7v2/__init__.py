@@ -1,7 +1,7 @@
 import hashlib
 from typing import Optional, Union
 import random, string, hashlib, argparse, sys
-
+from aidbox.resource.patient import Patient
 
 def random_md5():
     random_string = "".join(random.choices(string.ascii_letters + string.digits, k=10))
@@ -66,8 +66,12 @@ def get_first_last_name_dob(data):
     return "", "", ""
 
 
-def get_unique_patient_id(data):
+def get_patient_id(data):
     first_name, last_name, dob = get_first_last_name_dob(data)
+    patients = Patient.get({".name.0.given.0": str(first_name), ".birthDate": str(dob),
+                            ".name.0.family": str(last_name)})
+    if patients:
+        return patients[0].id
     return get_md5([first_name, last_name, dob])
 
 
