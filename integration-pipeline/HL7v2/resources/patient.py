@@ -11,7 +11,7 @@ from aidbox.base import (
     Meta
 )
 
-from HL7v2 import get_resource_id, get_unique_patient_id
+from HL7v2 import get_resource_id, get_patient_id
 
 
 def get_gender_by_code(code):
@@ -51,7 +51,7 @@ def get_language_by_code(code):
 
 
 def prepare_patient(data):
-    patient = Patient(id=get_unique_patient_id({"patient": data}))
+    patient = Patient(id=get_patient_id({"patient": data}))
 
     if "name" in data:
         patient.name = list(map(lambda item: HumanName(**item), data["name"]))
