@@ -24,12 +24,12 @@ class ServiceHistoryClient:
                 return ServiceHistoryClient.create_final_values(service_history, immuzation)
             if lab_result and not immunization:
                 if not service_history:  
-                    return []
+                    return {}
                 else:
                     return ServiceHistoryClient.process_lab_result(service_history)
             if immunization and not lab_result:
                 if not immuzation:  
-                    return []
+                    return {}
                 else:
                     return ServiceHistoryClient.process_immunization(immuzation)
             if lab_result and immunization:
@@ -43,12 +43,11 @@ class ServiceHistoryClient:
                 if test_by_name:
                     processed_lab_results = ServiceHistoryClient.extract_lab_result(test_by_name) 
                     processed_results.update(processed_lab_results)
-                
                 if vaccine_by_name:
                     processed_immunization_results = ServiceHistoryClient.extract_immunization_entries(vaccine_by_name)
                     processed_results.update(processed_immunization_results)
                 return processed_results if processed_results else []
-            return [] 
+            return {}
 
         except Exception as e:
             logger.error(f"Error retrieving Service History: {str(e)}")
@@ -65,7 +64,7 @@ class ServiceHistoryClient:
     def process_immunization(service_history):
         immunization_entries = []
         if not service_history:
-            return []
+            return {}
         immunizations = service_history.get("immunizations", {})
         current_page = service_history.get("current_page", 0)
         page_size = service_history.get("page_size", 0)
@@ -90,7 +89,6 @@ class ServiceHistoryClient:
                         "DateOfService": occurrence_date,
                     }
                 )
-
         return {
             "data": immunization_entries,
             "current_page": current_page,
@@ -102,7 +100,7 @@ class ServiceHistoryClient:
     def process_lab_result(service_history):
         service_history_entries = []
         if not service_history:
-            return []
+            return {}
         
         for entry in service_history.get("data", {}).get("entry", []):
             resource = entry.get("resource", {})
@@ -130,17 +128,28 @@ class ServiceHistoryClient:
             "total_items": service_history.get('total_items'),
             "total_pages": service_history.get('total_pages')
         }
+    
         
     def create_final_values(service_history, immunization):
         processed_immunization = ServiceHistoryClient.process_immunization(immunization)
         processed_lab_result = ServiceHistoryClient.process_lab_result(service_history)
-        if not isinstance(processed_immunization, list):
-            processed_immunization = processed_immunization if processed_immunization else []
-        if not isinstance(processed_lab_result, list):
-            processed_lab_result = processed_lab_result if processed_lab_result else []
-        combined_entries = {**processed_immunization, **processed_lab_result}
-        return combined_entries
-    
+        
+        if not processed_immunization and not processed_lab_result:
+            return {}
+        if not processed_immunization:
+            return processed_lab_result
+        if not processed_lab_result:
+            return processed_immunization
+        combined_data = processed_immunization.get('data', []) + processed_lab_result.get('data', [])
+        combined_result = {
+            'data': combined_data,
+            'current_page': processed_lab_result.get('current_page'),
+            'page_size': processed_lab_result.get('page_size'),
+            'total_items': processed_lab_result.get('total_items'),
+            'total_pages': processed_lab_result.get('total_pages')
+        }
+
+        return combined_result    
 
     def extract_immunization_entries(data):
         immunization_entries = []
@@ -178,7 +187,7 @@ class ServiceHistoryClient:
     def extract_lab_result(service_history):
         imaging_history_entries = []
         if not service_history:
-            return []
+            return {}
         
         for entry in service_history.get("data", {}).get("entry", []):
             resource = entry.get("resource", {})
