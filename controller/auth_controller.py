@@ -7,7 +7,6 @@ from datetime import datetime, timedelta, timezone
 import uuid
 import os
 
-
 from models.auth_validation import (
     UserModel, TokenModel, RotateToken, User, AccessPolicy, CimparRole, CimparPermission, ChangePassword, UserToken
 )
@@ -57,7 +56,7 @@ class AuthClient:
             confirm_link = os.path.join(os.environ.get("SET_PASSWORD_URL"), str(token))
             image_host = os.environ.get("IMAGE_HOST")
             if pat.createAccount:
-                with open('templates/set_email', 'r', encoding='utf-8') as file:
+                with open('templates/set_email.html', 'r', encoding='utf-8') as file:
                     email_template = file.read()
                 email_body = email_template.replace('{{name}}', user.name).replace(
                     '{{email}}', user.email).replace('{{confirm_link}}', confirm_link).replace(
@@ -68,7 +67,6 @@ class AuthClient:
                 return {
                     "id": user_id,
                     "email": user.email,
-                    #"token": token,
                     "message": "Signup successful! Check your email to set your password."
                 }
         except Exception as e:
