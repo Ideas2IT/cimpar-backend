@@ -15,11 +15,11 @@ class ServiceHistoryClient:
     @staticmethod
     def get_service_history(patient_id: str, service_type, name, page, count):
         try:
-            if service_type.lower() == "lab_result":
+            if service_type is not None and service_type.lower() == "lab_result":
                 final_response = ServiceHistoryClient.custom_query_with_pagination(
                     "filteredObservation", patient_id, name, page, count
                 )
-            elif service_type.lower() == "immunization":
+            elif service_type is not None and service_type.lower() == "immunization":
                 final_response = ServiceHistoryClient.custom_query_with_pagination(
                     "filteredImmunization", patient_id, name, page, count
                 )
@@ -198,7 +198,7 @@ class ServiceHistoryClient:
         data = response_name.json()
         count_res = AidboxApi.make_request(
             method="GET",
-            endpoint=f"/$query/{query_name}Count?patient_id={patient_id}&search={search}&limit={limit}&offset={offset}"
+            endpoint=f"/$query/{query_name}Count?patient_id={patient_id}&search={search}"
         )
         count_resp = count_res.json()
         total_count = count_resp["data"][0]["count"]
@@ -206,6 +206,7 @@ class ServiceHistoryClient:
             {
                 "resource": {
                     "id": item["id"],
+                    "record_type": item["record_type"],
                     **item["resource"]
                 }
             } for item in data.get('data', [])
