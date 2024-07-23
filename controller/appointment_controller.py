@@ -6,6 +6,9 @@ from fastapi.responses import JSONResponse
 
 from aidbox.base import CodeableConcept, Reference, Coding, Annotation
 from aidbox.resource.appointment import Appointment_Participant
+from aidbox.resource.observation import Observation
+from HL7v2 import get_md5
+from HL7v2.resources.observation import get_status
 
 from constants import (
     PATIENT_REFERENCE, 
@@ -37,9 +40,30 @@ class AppointmentClient:
     def create_appointment(patient_id: str, app: AppoinmentModel):
         try:
             response_data = {}
+
+            # Storing the lab result for the appointments.
+
+            observation = Observation(
+                id=get_md5(),
+                status=get_status("R"),
+                valueString="upcoming appointment",
+                subject=Reference(reference="Patient/" + (patient_id or "")),
+                code=CodeableConcept(coding=[
+                            Coding(
+                                system=APPOINTMENT_SYSTEM,
+                                code=concept.code,
+                                display=concept.display,
+                            )
+                            for concept in app.test_to_take
+                        ]),
+
+            )
+            observation.save()
+
             appointment = Appointment(
                 status=APPOINTMENT_STATUS,
                 description=app.other_reason,
+                comment=f"Observation/{observation.id}",
                 participant=[
                     Appointment_Participant(
                         actor=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
@@ -344,15 +368,15 @@ class AppointmentClient:
             )
 
     @staticmethod
-    def get_appointment(patient_name: str, state_date:str, end_date: str, all_appointment: bool, lab_test: str, page: str, page_size: str):
+    def get_appointment(patient_name: str, state_date:str, end_date: str, all_appointment: bool, lab_test: str, page: int, page_size: int):
         if patient_name:
             return AppointmentClient.get_by_patient_name(patient_name, page, page_size)
-        if all_appointment:
-            return AppointmentClient.get_appointment_detail(page, page_size)
-        if lab_test:
+        elif lab_test:
             return ObservationClient.get_lab_result_by_name(lab_test, page, page_size)
-        else:
+        elif state_date and end_date:
             return AppointmentClient.get_appointment_by_date(state_date, end_date, page, page_size)
+        else:
+            return AppointmentClient.get_appointment_detail(page, page_size)
          
 
     @staticmethod
