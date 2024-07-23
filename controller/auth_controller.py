@@ -57,7 +57,7 @@ class AuthClient:
             confirm_link = os.path.join(os.environ.get("SET_PASSWORD_URL"), str(token))
             image_host = os.environ.get("IMAGE_HOST")
             if pat.createAccount:
-                with open('templates/email.html', 'r', encoding='utf-8') as file:
+                with open('templates/set_email', 'r', encoding='utf-8') as file:
                     email_template = file.read()
                 email_body = email_template.replace('{{name}}', user.name).replace(
                     '{{email}}', user.email).replace('{{confirm_link}}', confirm_link).replace(
@@ -249,25 +249,28 @@ class AuthClient:
                 API.make_request(method="DELETE", endpoint=f"/UserToken/{token_entry['id']}")
             # Create a reset token
             token = uuid.uuid4()
-            reset_url = f"/api/confirm/{token}"
             token_expiration = (datetime.now(timezone.utc) + timedelta(hours=48)).isoformat() + 'Z'
             user_token = UserToken(
                 user_id=user_json["id"],
                 token=str(token),
-                token_expiration=token_expiration,
-                confirm_url=reset_url
+                token_expiration=token_expiration
             )
             user_token.save()
-            # Send reset email
-            email_body = f"Click this link to reset your password: {reset_url}"
+            confirm_link = os.path.join(os.environ.get("RESET_PASSWORD_URL"), str(token))
+            image_host = os.environ.get("IMAGE_HOST")
+            with open('templates/reset_email.html', 'r', encoding='utf-8') as file:
+                email_template = file.read()
+            email_body = email_template.replace('{{name}}', user_json.get("name", "CIMPAR User")).replace(
+                '{{email}}', email).replace('{{confirm_link}}', confirm_link).replace(
+                '{{host}}', image_host)
+            # Email send
             if not send_email(email, email_body):
-                raise Exception("Failed to send password reset email")
-
+                raise Exception("Failed to send confirmation email")
             return {
-                "message": "Password reset email sent",
-                "confirm_url": reset_url
+                "id": user_json["id"],
+                "email": email,
+                "message": "Password reset email sent! Check your email to reset your password."
             }
-
         except Exception as e:
             logger.error(f"Unable to request password reset: {str(e)}")
             logger.error(traceback.format_exc())
