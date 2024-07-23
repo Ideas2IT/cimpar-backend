@@ -223,3 +223,4 @@ class ServiceHistoryClient:
         if not data.get('data', []):
             final_response = []
         return final_response
+
