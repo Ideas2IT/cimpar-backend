@@ -15,7 +15,7 @@ async def get_service_history_by_id(
     request: Request,
     patient_id: str,
     service_type = None,
-    search_name: Optional[str] = None,
+    search_name: Optional[str] = "",
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100)
 ):
