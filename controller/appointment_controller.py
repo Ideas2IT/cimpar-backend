@@ -56,6 +56,7 @@ class AppointmentClient:
                             )
                             for concept in app.test_to_take
                         ]),
+                effectiveDateTime=app.date_of_appointment
 
             )
             observation.save()
@@ -377,7 +378,6 @@ class AppointmentClient:
             return AppointmentClient.get_appointment_by_date(state_date, end_date, page, page_size)
         else:
             return AppointmentClient.get_appointment_detail(page, page_size)
-         
 
     @staticmethod
     def get_appointment_detail(page, page_size):
@@ -412,7 +412,7 @@ class AppointmentClient:
             content=results,
             status_code=status.HTTP_200_OK
         )
-                
+
 
     def get_patient_id_and_service_type_from_appointment(appointment_value):
         patient_service_types = []
