@@ -72,19 +72,20 @@ def get_privileges(privileges_id: str, auth_token: str):
 
 
 def has_permission(user_id: str, resource: str, action: str, auth_token: str):
+    role_id = None
     permission_id = get_md5([user_id, "PERMISSION"])
     permissions = get_permission(permission_id, auth_token)
     if permissions and permissions.get("cimpar_role", {}).get("id"):
         role_id = permissions["cimpar_role"]["id"]
     else:
-        return False
+        return False, role_id
     privileges_json = get_privileges(role_id, auth_token)
     privileges = privileges_json["permissions"][0]["endpoints"]
     for privilege in privileges:
         if (privilege["uri"] == "*" or privilege["uri"].upper() == resource.upper()) and \
                 (action.lower() in privilege["action"] or "*" in privilege["action"]):
-            return True
-    return False
+            return True,  role_id
+    return False, role_id
 
 
 def permission_required(resource: str, action: str):
@@ -103,8 +104,13 @@ def permission_required(resource: str, action: str):
             user_id_context.set(user_id)
             if not get_user(user_id, auth_token):
                 raise HTTPException(status_code=403, detail="Permission denied")
-            if not has_permission(user_id, resource, action, auth_token):
+            status, role = has_permission(user_id, resource, action, auth_token)
+            if not status:
                 raise HTTPException(status_code=403, detail="Permission denied")
+            if role.lower() != "admin" and "patient_id" in kwargs:
+                patient_id = kwargs.get("patient_id")
+                if user_id != patient_id:
+                    raise HTTPException(status_code=403, detail="Permission denied: Unauthorized Patient")
             return await func(*args, **kwargs)
         return wrapper
     return decorator

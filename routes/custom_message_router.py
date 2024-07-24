@@ -16,7 +16,7 @@ async def get_custom_message(request: Request):
 
 
 @router.post("/custom_message/{messge}")  
-@permission_required("MESSAGE", "WRITE")
+@permission_required("MESSAGE", "CREATE")
 async def update_custom_message(message: str, request: Request):
     logger.info(f"Request Payload: {message}")
     return CustomMessageClient.update_custom_message(message)

@@ -11,7 +11,7 @@ logger = logging.getLogger("log")
 
 
 @router.post("/patient")
-#@permission_required("PATIENT", "WRITE")
+#@permission_required("PATIENT", "CREATE")
 async def patient_route(pat: PatientModel, request: Request):
     logger.info(f"Request Payload: {pat}")
     response = PatientClient.create_patient(pat)
@@ -27,7 +27,7 @@ async def get_patient(patient_id: str, request: Request):
 
 
 @router.get("/patients")
-@permission_required("PATIENT", "READ")
+@permission_required("PATIENT", "ALL_READ")
 async def get_all_patients(request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
     logger.info("Fetching all patients")
     return PatientClient.get_all_patients(page, page_size)

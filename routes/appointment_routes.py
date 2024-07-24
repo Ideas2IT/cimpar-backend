@@ -11,14 +11,14 @@ logger = logging.getLogger("log")
 
 
 @router.post("/appointment/{patient_id}")
-@permission_required("APPOINTMENT", "WRITE")
+@permission_required("APPOINTMENT", "CREATE")
 async def create_appointment(patient_id: str, app: AppoinmentModel, request: Request):
     logger.info(f"Request Payload: {patient_id}")
     return AppointmentClient.create_appointment(patient_id, app)
 
 
 @router.get("/appointment")
-@permission_required("APPOINTMENT", "READ")
+@permission_required("APPOINTMENT", "ALL_READ")
 async def get_all_appointment(request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
     logger.info("Fetching all appointment")
     return AppointmentClient.get_all_appointment(page, page_size)
@@ -45,7 +45,7 @@ async def get_by_id(
 
 
 @router.get("/appointment/")
-@permission_required("APPOINTMENT", "READ")
+@permission_required("APPOINTMENT", "ALL_READ")
 async def get_appointment(
         request: Request,
         patient_name: Optional[str] = None,
