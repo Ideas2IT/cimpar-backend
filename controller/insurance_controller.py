@@ -359,13 +359,13 @@ class CoverageClient:
         return secondary_insurance(
                     status=secondary_status,
                     beneficiary=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
-                    subscriberId=coverage.insuranceDetails.policyNumber,
-                    payor=[Reference(display=coverage.insuranceDetails.providerName)],
+                    subscriberId=coverage.secondaryInsuranceDetails.policyNumber,
+                    payor=[Reference(display=coverage.secondaryInsuranceDetails.providerName)],
                     class_=[
                         Coverage_Class(
                             type=CodeableConcept(coding=[Coding(system=GROUP_SYSTEM, code=GROUP_CODE)]),
                             value=SECONDARY_STATUS,
-                            name=coverage.insuranceDetails.groupNumber 
+                            name=coverage.secondaryInsuranceDetails.groupNumber 
                     )],
                     dependent=secondary_value
                 )
