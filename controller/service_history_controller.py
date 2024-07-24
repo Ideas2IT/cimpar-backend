@@ -27,6 +27,7 @@ class ServiceHistoryClient:
                 final_response = ServiceHistoryClient.custom_query_with_pagination(
                     "filteredImmunizationObservation", patient_id, name, page, count
                 )
+                
             return JSONResponse(
                 content=final_response,
                 status_code=status.HTTP_200_OK

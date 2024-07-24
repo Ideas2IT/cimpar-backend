@@ -91,7 +91,7 @@ class PatientClient:
                 contact=[
                     Patient_Contact(
                         telecom=[
-                            ContactPoint(system=PHONE_SYSTEM, value=phone_number),
+                            ContactPoint(system=PHONE_SYSTEM, value=phone_number, use=MOBILE, rank=RANK_MOBILE),
                             ContactPoint(system=EMAIL_SYSTEM, value=email)
                         ]
                     )
