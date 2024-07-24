@@ -11,7 +11,7 @@ logger = logging.getLogger("log")
 
 
 @router.post("/encounter/{patient_id}")
-@permission_required("ENCOUNTER", "WRITE")
+@permission_required("ENCOUNTER", "CREATE")
 async def create_encounter(encounter: EncounterModel, patient_id, request: Request):
     logger.info(f"Request Payload: {encounter}")
     response = EncounterClient.create_encounter(encounter, patient_id)
@@ -34,14 +34,14 @@ async def get_encounter_by_id(patient_id: str, encounter_id: str, request: Reque
 
 
 @router.get("/encounter")
-@permission_required("ENCOUNTER", "READ")
+@permission_required("ENCOUNTER", "ALL_READ")
 async def get_all_encounters(request: Request, page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
     logger.info("Fetching all encounters")
     return EncounterClient.get_all_encounters(page, page_size)
 
 
 @router.put("/encounter/{patient_id}/{encounter_id}")
-@permission_required("ENCOUNTER", "EDIT")
+@permission_required("ENCOUNTER", "UPDATE")
 async def update_encounter(patient_id: str, encounter_id: str, encounter: EncounterUpdateModel, request: Request):
     logger.info(f"Updating encounter ID:{patient_id}")
     return EncounterClient.update_by_patient_id(patient_id, encounter_id, encounter)

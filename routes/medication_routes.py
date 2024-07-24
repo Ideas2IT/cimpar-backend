@@ -11,7 +11,7 @@ logger = logging.getLogger("log")
 
 
 @router.post("/medication/{patient_id}", response_model=dict)
-@permission_required("MEDICATION", "WRITE")
+@permission_required("MEDICATION", "CREATE")
 async def create_medication(med: MedicationCreateModel, patient_id: str, request: Request):
     logger.info(f"Medication: {med}")
     return MedicationClient.create_medication(med, patient_id)
