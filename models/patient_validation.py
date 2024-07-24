@@ -22,7 +22,7 @@ def validate_date_of_birth(timestamp):
 def validate_phone_number(phone_number: str) -> str:
     if not re.match(r'^\d{10}$', phone_number):
         raise ValueError('Phone number must be 10 digits')
-    return f"+1{phone_number}"
+    return phone_number
 
 
 def validate_zip_code(zip_code: str) -> str:

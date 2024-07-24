@@ -92,7 +92,7 @@ class EncounterClient:
             result["current_page"] = page
             result["page_size"] = count
             result["total_items"] = encounter_data.get('total', 0)
-            result["total_pages"] = (int(encounter_data["total"]) // count) + 1
+            result["total_pages"] = (int(encounter_data["total"]) + count - 1) // count
             if encounter_data.get('total', 0) == 0:
                 logger.info(f"No encounters found for patient: {patient_id}")
                 return JSONResponse(
