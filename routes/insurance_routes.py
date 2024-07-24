@@ -13,7 +13,7 @@ logger = logging.getLogger("log")
 
 
 @router.post('/insurance/{patient_id}')
-@permission_required("INSURANCE", "WRITE")
+@permission_required("INSURANCE", "CREATE")
 async def insurance_route(ins_plan: CoverageModel, patient_id: str, request: Request):
     logger.info(f"Request Payload: {ins_plan}")
     response = CoverageClient.create_coverage_insurance(ins_plan, patient_id)

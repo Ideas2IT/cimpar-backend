@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from utils.common_utils import paginate
 from services.aidbox_resource_wrapper import Observation
+from models.lab_result_validation import StatusModel
 
 logger = logging.getLogger("log")
 
@@ -124,3 +125,33 @@ class ObservationClient:
         if name:
             return ObservationClient.get_lab_result_by_name(patient_id ,name, page, page_size)
         return ObservationClient.get_lab_result_by_patient_id(patient_id, page, page_size)
+
+    @staticmethod
+    def update_lab_status(patient_id: str, lab_result_id: str, update_status: StatusModel):
+        try:
+            lab_result = Observation.make_request(method="GET",
+                                                  endpoint=f"/fhir/Observation/{lab_result_id}?subject=Patient/{patient_id}")
+            lab_result_json = lab_result.json()
+            if lab_result.status_code == 404:
+                logger.info(f"Lab Result Not Found: {patient_id}")
+                return JSONResponse(
+                    content={"error": "No Matching Record"},
+                    status_code=status.HTTP_404_NOT_FOUND
+                )
+            data = Observation(**lab_result_json)
+            data.valueString = update_status.status
+            data.save()
+            response_data = {"id": data.id, "status": data.valueString}
+            logger.info(f"Updated Successfully in DB: {response_data}")
+            return response_data
+        except Exception as e:
+            logger.error(f"Error retrieving Lab Result: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to retrieve Lab Result",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )

@@ -11,7 +11,7 @@ logger = logging.getLogger("log")
 
 
 @router.post("/condition_allergy/{patient_id}")
-@permission_required("CONDITION", "WRITE")
+@permission_required("CONDITION", "CREATE")
 async def create_condition_allergy(condition: ConditionModel, patient_id: str, request: Request):
     logger.info(f"Request Payload: {condition}")
     response = ConditionClient.create_condition_allergy(condition, patient_id)

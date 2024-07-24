@@ -55,7 +55,6 @@ class CoverageClient:
                 "error": "Unable to create Insurance",
                 "details": str(e),
             }
-
             return JSONResponse(
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
