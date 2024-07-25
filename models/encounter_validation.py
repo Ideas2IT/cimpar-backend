@@ -1,10 +1,7 @@
 import re
 from pydantic import BaseModel, validator
+from models.patient_validation import validate_phone_number
 
-def validate_phone_number(phone_number: str) -> str:
-    if not re.match(r'^\d{10}$', phone_number):
-        raise ValueError('Phone number must be 10 digits')
-    return phone_number
 
 class EncounterModel(BaseModel):
     location: str 

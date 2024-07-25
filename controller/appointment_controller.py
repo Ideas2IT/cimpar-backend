@@ -16,7 +16,9 @@ from constants import (
     PARTICIPANT_STATUS,
     CURRENT, 
     OTHER, 
-    APPOINTMENT_SYSTEM
+    APPOINTMENT_SYSTEM,
+    START_DATE,
+    END_DATE
 )
 from services.aidbox_resource_wrapper import Appointment
 from models.appointment_validation import AppoinmentModel
@@ -393,8 +395,8 @@ class AppointmentClient:
         if patient_name:
             return AppointmentClient.get_by_patient_name(patient_name, page, page_size)
         elif state_date or end_date:
-            state_date = state_date if state_date else "1999-01-01"
-            end_date = end_date if end_date else "2999-12-01"
+            state_date = state_date if state_date else START_DATE
+            end_date = end_date if end_date else END_DATE
             return AppointmentClient.get_appointment_by_date(state_date, end_date, page, page_size)
         elif service_name:
             return AppointmentClient.custom_query_with_pagination(
@@ -406,10 +408,10 @@ class AppointmentClient:
          
     @staticmethod
     def get_appointment_detail(page, page_size):
-        results = [] 
+        results = []
         appointment = AppointmentClient.get_all_appointment(page, page_size)
         data = json.loads(appointment.body)
-        appointment_value = AppointmentClient.get_patient_id_and_service_type_from_appointment(data)   
+        appointment_value = AppointmentClient.get_patient_id_and_service_type_from_appointment(data)
         if appointment_value:
             for patient in appointment_value:
                 patient_id = patient.get("patient_id")
@@ -424,18 +426,24 @@ class AppointmentClient:
                     'start': patient.get("start"),
                     'end': patient.get("end"),
                 }
-                results.append(patient_result)
                 coverage_response = AppointmentClient.get_insurance_detail(patient_id)
                 patient_result["insurance"] = coverage_response.get("insurance")
+                patient_result["coverage_details"] = coverage_response.get("coverage_details", [])
                 results.append(patient_result)
-                final_result = {
-                    "data": results,
-                    "pagination": data.get('pagination')
-                }
+            final_result = {
+                "data": results,
+                "pagination": data.get('pagination')
+            }
+        else:
+            final_result = {
+                "data": [],
+                "pagination": {}
+            }
         return JSONResponse(
             content=final_result,
             status_code=status.HTTP_200_OK
         )
+
 
     @staticmethod
     def formated_data(formatted_data: list):
