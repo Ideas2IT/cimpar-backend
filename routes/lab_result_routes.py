@@ -4,7 +4,6 @@ from typing import Optional
 
 from controller.lab_result_controller import ObservationClient
 from utils.common_utils import permission_required
-from models.lab_result_validation import StatusModel
 
 router = APIRouter()
 logger = logging.getLogger("log")
@@ -37,10 +36,3 @@ async def get_lab_result_by_patient_id(
     ):
     logger.info(f"Service History ID:{patient_id}")
     return ObservationClient.get_lab_result(page, page_size, name, patient_id)
-
-
-@router.put("/observation/{patient_id}/{lab_result_id}")
-@permission_required("OBSERVATION", "UPDATE")
-async def update_lab_status(patient_id: str, lab_result_id: str, update_status: StatusModel, request: Request):
-    logger.info(f"Lab Result ID:{patient_id}")
-    return ObservationClient.update_lab_status(patient_id, lab_result_id, update_status)

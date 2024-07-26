@@ -43,3 +43,4 @@ RANK_ALTERNATE = 2
 APPOINTMENT_SYSTEM = "http://terminology.hl7.org/CodeSystem/v2-0203"
 START_DATE = "1999-01-01"
 END_DATE = "2999-12-01"
+UPCOMING_APPOINTMENT = "upcoming appointment"
