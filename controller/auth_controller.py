@@ -55,20 +55,19 @@ class AuthClient:
             user_token.save()
             confirm_link = os.path.join(os.environ.get("SET_PASSWORD_URL"), str(token))
             image_host = os.environ.get("IMAGE_HOST")
-            if pat.createAccount:
-                with open('templates/set_email.html', 'r', encoding='utf-8') as file:
-                    email_template = file.read()
-                email_body = email_template.replace('{{name}}', user.name).replace(
-                    '{{email}}', user.email).replace('{{confirm_link}}', confirm_link).replace(
-                    '{{host}}', image_host)
-                # Email send
-                if not send_email(user.email, email_body):
-                    raise Exception("Failed to send confirmation email")
-                return {
-                    "id": user_id,
-                    "email": user.email,
-                    "message": "Signup successful! Check your email to set your password."
-                }
+            with open('templates/set_email.html', 'r', encoding='utf-8') as file:
+                email_template = file.read()
+            email_body = email_template.replace('{{name}}', user.name).replace(
+                '{{email}}', user.email).replace('{{confirm_link}}', confirm_link).replace(
+                '{{host}}', image_host)
+            # Email send
+            if not send_email(user.email, email_body):
+                raise Exception("Failed to send confirmation email")
+            return {
+                "id": user_id,
+                "email": user.email,
+                "message": "Signup successful! Check your email to set your password."
+            }
         except Exception as e:
             logger.error(f"Unable to create a user: {str(e)}")
             logger.error(traceback.format_exc())

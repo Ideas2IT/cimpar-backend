@@ -1,21 +1,16 @@
 import re
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime, timezone
 
 
 def validate_date_of_birth(timestamp):
-    if timestamp < 0:
-        if abs(timestamp) > 10**10:
-            timestamp = timestamp / 1000.0
-    else:
-        if timestamp > 10**10:
-            timestamp = timestamp / 1000.0
     try:
+        timestamp = abs(timestamp) / 1000.0
         utc_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
     except (OverflowError, ValueError) as e:
-        return {"Error": str(e)}
+        raise ValueError('Invalid DOB %s' %timestamp)
     return utc_dt.strftime('%Y-%m-%d')
 
 
@@ -33,7 +28,7 @@ def validate_zip_code(zip_code: str) -> str:
 
 def validate_name(name: str) -> str:
     if name and not re.match(r'^[A-Za-z]+$', name):
-        raise ValueError('Name must contain alphabetic characters and spaces alone')   
+        raise ValueError('Name must contain alphabetic characters and spaces alone')
     return name
 
 
@@ -44,7 +39,7 @@ class InsuranceDetail(BaseModel):
 
 
 class PatientModel(BaseModel):
-    id : Optional[str] = None
+    id: Optional[str] = None
     firstName: str
     middleName: Optional[str] = ""
     lastName: Optional[str] = ""
@@ -69,17 +64,23 @@ class PatientModel(BaseModel):
     haveSecondaryInsurance: bool
     secondaryInsuranceDetails: InsuranceDetail
     insuranceDetails: InsuranceDetail
-    createAccount : bool
-    _validate_first_name = validator('firstName', allow_reuse=True)(validate_name)
-    _validate_middle_name = validator('middleName', allow_reuse=True)(validate_name)
-    _validate_last_name = validator('lastName', allow_reuse=True)(validate_name)
-    _validate_gender = validator('gender', allow_reuse=True)(validate_name)  
-    _validate_city = validator('city', allow_reuse=True)(validate_name)
-    _validate_state = validator('state', allow_reuse=True)(validate_name)
-    _validate_country = validator('country', allow_reuse=True)(validate_name)
-    _validate_zip_code = validator('zipCode', allow_reuse=True)(validate_zip_code)
-    _validate_date_of_birth = validator('dob', allow_reuse=True)(validate_date_of_birth)
-    _validate_phone_number = validator('phoneNo', allow_reuse=True)(validate_phone_number)
+    createAccount: bool
+
+    @field_validator('firstName', 'middleName', 'lastName', 'gender', 'city', 'state', 'country')
+    def validate_name(cls, value):
+        return validate_name(value)
+
+    @field_validator('zipCode')
+    def validate_zip_code(cls, value):
+        return validate_zip_code(value)
+
+    @field_validator('dob')
+    def validate_date_of_birth(cls, value):
+        return validate_date_of_birth(value)
+
+    @field_validator('phoneNo')
+    def validate_phone_number(cls, value):
+        return validate_phone_number(value)
 
 
 class PatientUpdateModel(BaseModel):
@@ -100,13 +101,19 @@ class PatientUpdateModel(BaseModel):
     email: Optional[EmailStr] = ""
     height: Optional[str] = None
     weight: Optional[str] = None
-    _validate_first_name = validator('firstName', allow_reuse=True)(validate_name)
-    _validate_middle_name = validator('middleName', allow_reuse=True)(validate_name)
-    _validate_last_name = validator('lastName', allow_reuse=True)(validate_name)
-    _validate_gender = validator('gender', allow_reuse=True)(validate_name) 
-    _validate_city = validator('city', allow_reuse=True)(validate_name)
-    _validate_state = validator('state', allow_reuse=True)(validate_name)
-    _validate_country = validator('country', allow_reuse=True)(validate_name)
-    _validate_zip_code = validator('zipCode', allow_reuse=True)(validate_zip_code)
-    _validate_date_of_birth = validator('dob', allow_reuse=True)(validate_date_of_birth)
-    _validate_phone_number = validator('phoneNo', allow_reuse=True)(validate_phone_number)
+
+    @field_validator('firstName', 'middleName', 'lastName', 'gender', 'city', 'state', 'country')
+    def validate_name(cls, value):
+        return validate_name(value)
+
+    @field_validator('zipCode')
+    def validate_zip_code(cls, value):
+        return validate_zip_code(value)
+
+    @field_validator('dob')
+    def validate_date_of_birth(cls, value):
+        return validate_date_of_birth(value)
+
+    @field_validator('phoneNo')
+    def validate_phone_number(cls, value):
+        return validate_phone_number(value)
