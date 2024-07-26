@@ -7,7 +7,8 @@ import traceback
 from controller.lab_result_controller import ObservationClient
 from controller.hl7_immunization_controller import HL7ImmunizationClient
 from services.aidbox_service import AidboxApi
-
+from controller.appointment_controller import AppointmentClient
+from constants import UPCOMING_APPOINTMENT
 logger = logging.getLogger("log")
 
 
@@ -24,10 +25,14 @@ class ServiceHistoryClient:
                     "filteredImmunization", patient_id, name, page, count
                 )
             else:
-                final_response = ServiceHistoryClient.custom_query_with_pagination(
+                response = ServiceHistoryClient.custom_query_with_pagination(
                     "filteredImmunizationObservation", patient_id, name, page, count
                 )
-                
+                final_response = []
+                if int(page) == 1:
+                    final_response = AppointmentClient.get_appointment_by_patient_id(patient_id, UPCOMING_APPOINTMENT)
+                if response and response.get("data", []):
+                    final_response.extend(response.get("data", []))
             return JSONResponse(
                 content=final_response,
                 status_code=status.HTTP_200_OK

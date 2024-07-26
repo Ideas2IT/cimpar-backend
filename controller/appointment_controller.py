@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from aidbox.base import CodeableConcept, Reference, Coding, Annotation
 from aidbox.resource.appointment import Appointment_Participant
 from aidbox.resource.observation import Observation
+from models.appointment_validation import StatusModel
 from HL7v2 import get_md5
 from HL7v2.resources.observation import get_status
 
@@ -17,6 +18,7 @@ from constants import (
     CURRENT, 
     OTHER, 
     APPOINTMENT_SYSTEM,
+    UPCOMING_APPOINTMENT,
     START_DATE,
     END_DATE
 )
@@ -38,31 +40,10 @@ class AppointmentClient:
     def create_appointment(patient_id: str, app: AppoinmentModel):
         try:
             response_data = {}
-
-            # Storing the lab result for the appointments.
-
-            observation = Observation(
-                id=get_md5(),
-                status=get_status("R"),
-                valueString="upcoming appointment",
-                subject=Reference(reference="Patient/" + (patient_id or "")),
-                code=CodeableConcept(coding=[
-                            Coding(
-                                system=APPOINTMENT_SYSTEM,
-                                code=concept.code,
-                                display=concept.display,
-                            )
-                            for concept in app.test_to_take
-                        ]),
-                effectiveDateTime=app.date_of_appointment
-
-            )
-            observation.save()
-
             appointment = Appointment(
                 status=APPOINTMENT_STATUS,
                 description=app.other_reason,
-                comment=f"Observation/{observation.id}",
+                comment=UPCOMING_APPOINTMENT,
                 participant=[
                     Appointment_Participant(
                         actor=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
@@ -173,25 +154,16 @@ class AppointmentClient:
             )
         
     @staticmethod
-    def get_appointment_by_patient_id(patient_id: int, page: int, page_size: int):
+    def get_appointment_by_patient_id(patient_id: str, search: str):
         try:
-            result = {}
             appointment = Appointment.make_request(
                 method="GET",
-                endpoint=f"/fhir/Appointment/?.participant.0.actor.id={patient_id}&_page={page}&_count={page_size}",
+                endpoint=f"/fhir/Appointment/?.participant.0.actor.id={patient_id}&.comment={search}",
             )
             appointment_data = appointment.json()
-            result["data"] = appointment_data
-            result["current_page"] = page
-            result["page_size"] = page
-            result["total_items"] = appointment_data.get('total', 0)
-            result["total_pages"] = (int(appointment_data["total"]) + page_size - 1) // page_size
-            if appointment_data.get('total', 0) == 0:
-                logger.info(f"No appointment found for patient: {patient_id}")
-                return JSONResponse(
-                    content=[],
-                    status_code=status.HTTP_200_OK
-                )
+            result = appointment_data["entry"]
+            for each_result in result:
+                each_result["record_type"] = "appointment"
             return result
         except Exception as e:
             logger.error(f"Error retrieving appointment: {str(e)}")
@@ -200,11 +172,10 @@ class AppointmentClient:
                 "error": "Unable to retrieve appointment",
                 "details": str(e),
             }
-
             return JSONResponse(
-                content=error_response_data,
-                status_code=status.HTTP_400_BAD_REQUEST
+                content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
+
 
     @staticmethod
     def get_all_appointment(page, page_size):
@@ -601,7 +572,6 @@ class AppointmentClient:
                     process_entries([entry], resource_type)
         
         return result
-    
 
     @staticmethod
     def custom_query_with_pagination(query_name: str, search: str, page: int, page_size: int):
@@ -641,4 +611,30 @@ class AppointmentClient:
             final_response = []
         return final_response
     
-
+    @staticmethod
+    def update_appointment_status(appointment_id: str, update_status: StatusModel):
+        try:
+            appointment_result = Appointment.make_request(method="GET", endpoint=f"/fhir/Appointment/{appointment_id}")
+            appointment_json = appointment_result.json()
+            if appointment_result.status_code == 404:
+                return JSONResponse(
+                    content={"error": "No Matching Record"},
+                    status_code=status.HTTP_404_NOT_FOUND
+                )
+            data = Appointment(**appointment_json)
+            data.comment = update_status.status
+            data.save()
+            response_data = {"id": data.id, "status": data.comment}
+            logger.info(f"Updated Successfully in DB: {response_data}")
+            return response_data
+        except Exception as e:
+            logger.error(f"Error retrieving Lab Result: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to retrieve Lab Result",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
