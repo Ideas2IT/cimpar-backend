@@ -66,9 +66,13 @@ class PatientClient:
                         if coverage_values.get('is_secondary_coverage_exist'):
                             result_data['is_secondary_coverage_exist'] = coverage_values.get('is_secondary_coverage_exist')
                 result_data["Updated"] = patient_update.get("Updated")
-                if not User.get({"id": patient_id_update}):
-                    user = UserModel(email=pat.email, id=patient_id_update,
-                                name=pat.firstName + " " + pat.middleName + " "+ pat.lastName)
+                #if (not user_json) or (user_json and getattr(user_json[0], "inactive", False)):
+                if pat.createAccount and not User.get({"id": patient_id_update}):
+                    user = UserModel(
+                        email=pat.email,
+                        id=patient_id_update,
+                        name=pat.firstName + " " + pat.middleName + " " + pat.lastName
+                    )
                     response_data = AuthClient.create(user, pat)
                 return result_data
             result = {}
@@ -163,9 +167,9 @@ class PatientClient:
                         result['is_secondary_coverage_exist'] = coverage_values.get('is_secondary_coverage_exist')
             result['created'] = True
             logger.debug("Patient saved successfully")
-            if not User.get({"id": patient.id}):
+            if pat.createAccount and not User.get({"id": patient.id}):
                 user = UserModel(email=pat.email, id=patient.id,
-                            name=pat.firstName + " " + pat.middleName + " "+ pat.lastName)
+                            name=pat.firstName + " " + pat.middleName + " " + pat.lastName)
                 response_data = AuthClient.create(user, pat)
             logger.info(f"Added Successfully in DB: {result}")
             return result
