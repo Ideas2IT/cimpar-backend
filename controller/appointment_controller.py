@@ -163,7 +163,8 @@ class AppointmentClient:
             appointment_data = appointment.json()
             result = appointment_data["entry"]
             for each_result in result:
-                each_result["record_type"] = "appointment"
+                if "resource" in each_result and each_result["resource"]:
+                    each_result["resource"]["record_type"] = "appointment"
             return result
         except Exception as e:
             logger.error(f"Error retrieving appointment: {str(e)}")
@@ -175,7 +176,6 @@ class AppointmentClient:
             return JSONResponse(
                 content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
-
 
     @staticmethod
     def get_all_appointment(page, page_size):
@@ -217,7 +217,7 @@ class AppointmentClient:
                 appointment_detail = appointment.json()
                 condition_allergy_resource = ConditionClient.get_condition_by_patient_id(patient_id)
                 extracted_conditions = AppointmentClient.process_conditions_and_allergies(condition_allergy_resource)
-                insurance_detail = AppointmentClient.get_insurance_detail(patient_id)
+                insurance_detail = CoverageClient.get_insurance_detail(patient_id)
                 participant_reference = appointment_detail.get("participant", [{}])[0].get("actor", {}).get("reference", "")
                 patient_id_extracted = participant_reference.split('/')[1] if participant_reference else ""
                 service_type_display = appointment_detail.get("serviceType", [{}])[0].get("coding", [{}])[0].get("display", "")
@@ -397,7 +397,7 @@ class AppointmentClient:
                     'start': patient.get("start"),
                     'end': patient.get("end"),
                 }
-                coverage_response = AppointmentClient.get_insurance_detail(patient_id)
+                coverage_response = CoverageClient.get_insurance_detail(patient_id)
                 patient_result["insurance"] = coverage_response.get("insurance")
                 patient_result["coverage_details"] = coverage_response.get("coverage_details", [])
                 results.append(patient_result)
@@ -425,7 +425,7 @@ class AppointmentClient:
                 for participant in item["resource"]["participant"]:
                     patient_id = participant["actor"]["id"]
         patient_details = AppointmentClient.get_patient_detail(patient_id)
-        insurance_detail = AppointmentClient.get_insurance_detail(patient_id)
+        insurance_detail = CoverageClient.get_insurance_detail(patient_id)
         result = {
             "patientId": patient_details.get("id"),
             "name": (patient_details.get('firstName', '') + " " + patient_details.get('lastName', '')).strip(),
@@ -438,38 +438,7 @@ class AppointmentClient:
             'end': appointment.get("end")
         }
         results.append(result) 
-        return results 
-
-
-    @staticmethod
-    def get_insurance_detail(patient_id: str):
-        patient_result = {}
-        total_coverage = 0
-        coverage_response = CoverageClient.get_coverage_by_patient_id(patient_id)
-        coverages = []
-        if isinstance(coverage_response, dict) and 'coverage' in coverage_response:
-            total_coverage = coverage_response.get('coverage', {}).get('total', 0)
-            coverage_entries = coverage_response.get('coverage', {}).get('entry', [])
-            for entry in coverage_entries:
-                resource = entry.get('resource', {})
-                class_info = resource.get('class', [{}])[0]
-                beneficiary_reference = resource.get('beneficiary', {}).get('reference', "")
-                patient_id_from_response = beneficiary_reference.split("/")[-1] if beneficiary_reference else ""
-                coverage_info = {
-                    "id": resource.get('id', ''),
-                    "patient_id": patient_id_from_response,
-                    "providerName": resource.get('payor', [{}])[0].get('display', ''),
-                    "policyNumber": resource.get('subscriberId', ''),
-                    "groupNumber": class_info.get('name', ''),
-                    "note": class_info.get('value', '')
-                }
-                coverages.append(coverage_info)
-        elif isinstance(coverage_response, list) and len(coverage_response) > 0:
-            total_coverage = coverage_response[0].get('coverage', {}).get('total', 0) 
-        patient_result["insurance"] = "No" if total_coverage == 0 else "Yes"
-        patient_result["coverage_details"] = coverages
-        return patient_result
-    
+        return results
 
     @staticmethod
     def get_patient_detail(patient_id):
@@ -501,7 +470,6 @@ class AppointmentClient:
                         'end': end_time
                     })
         return patient_service_types
-    
 
     @staticmethod
     def get_appointment_data(appointment_value):
@@ -529,7 +497,6 @@ class AppointmentClient:
                     }
                     patient_service.append(patient_service_details)
         return patient_service
-
 
     @staticmethod
     def process_conditions_and_allergies(data):

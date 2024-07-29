@@ -11,13 +11,13 @@ logger = logging.getLogger("log")
 def run(message):
     entry = []
     patient_group = message.get("patient_group", {})
-    patient = prepare_patient(patient_group["patient"])
+    patient, patient_url = prepare_patient(patient_group["patient"])
 
     if "patient" in patient_group:
         entry.append(
             {
                 "resource": patient.dumps(exclude_none=True, exclude_unset=True),
-                "request": {"method": "PUT", "url": "Patient"},
+                "request": {"method": "PUT", "url": patient_url},
             }
         )
 

@@ -71,8 +71,9 @@ def get_patient_id(data):
     patients = Patient.get({".name.0.given.0": str(first_name), ".birthDate": str(dob),
                             ".name.0.family": str(last_name)})
     if patients:
-        return patients[0].id
-    return get_md5([first_name, last_name, dob])
+        return patients[0].id, patients[0]
+    patient_id = get_md5([first_name, last_name, dob])
+    return patient_id, Patient(id=patient_id)
 
 
 def get_unique_patient_id_json(first_name="", last_name="", dob=""):
