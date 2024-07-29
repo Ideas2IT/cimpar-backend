@@ -51,8 +51,10 @@ def get_language_by_code(code):
 
 
 def prepare_patient(data):
-    patient = Patient(id=get_patient_id({"patient": data}))
-
+    patient_id, patient = get_patient_id({"patient": data})
+    patient_url = "Patient"
+    if Patient.get({"id": patient_id}):
+        patient_url += f"/{patient_id}"
     if "name" in data:
         patient.name = list(map(lambda item: HumanName(**item), data["name"]))
 
@@ -76,14 +78,27 @@ def prepare_patient(data):
                 data["address"],
             )
         )
-
-    if "telecom" in data:
-        patient.telecom = list(
-            map(
-                lambda item: ContactPoint(use="home", value=item.get("phone", "")),
-                data.get("telecom", []),
-            )
-        )
+    if "telecom" in data and data["telecom"]:
+        existing_telecom_dict = {}
+        contact = patient.contact[0]
+        if contact.telecom:
+            for tp in contact.telecom:
+                if tp.system == "email":
+                    existing_telecom_dict[(tp.system,)] = tp
+                else:
+                    existing_telecom_dict[(tp.use, tp.system)] = tp
+        # Process new telecom data and update the existing dictionary
+        for item in data.get("telecom", []):
+            use = item.get("use")
+            system = item.get("system")
+            value = item.get(system)
+            if system == "email":
+                existing_telecom_dict[("email",)] = ContactPoint(system="email", value=value)
+            elif system == "phone" and use == "home":
+                existing_telecom_dict[("home", "phone")] = ContactPoint(use="home", system="phone", value=value)
+            elif system == "phone" and use == "temp":
+                existing_telecom_dict[("temp", "phone")] = ContactPoint(use="temp", system="phone", value=value)
+        patient.telecom = list(existing_telecom_dict.values())
 
     if "identifier" in data:
         patient.identifier = [
@@ -166,4 +181,4 @@ def prepare_patient(data):
         
         patient.extension.append(ethnicity_extension)
 
-    return patient
+    return patient, patient_url

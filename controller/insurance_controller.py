@@ -112,7 +112,6 @@ class CoverageClient:
                 status_code=status.HTTP_400_BAD_REQUEST
             )
 
-        
     @staticmethod
     def get_coverage_by_patient_id(patient_id: str):
         try:
@@ -121,7 +120,7 @@ class CoverageClient:
             
             if coverage.get('total', 0) == 0:
                 logger.info(f"No Coverage found for patient: {patient_id}")
-                return []
+                return {}
             return {"coverage": coverage}
         except Exception as e:
             logger.error(f"Unable to get coverage data: {str(e)}")
@@ -293,7 +292,6 @@ class CoverageClient:
                         return result
         result["is_primary_insurance_exist"] = False
         return result
-    
 
     @staticmethod
     def get_secondary_coverage(existing_coverages, patient_id):
@@ -405,4 +403,32 @@ class CoverageClient:
                 )
             ]
         )
-    
+
+    @staticmethod
+    def get_insurance_detail(patient_id: str):
+        patient_result = {}
+        total_coverage = 0
+        coverage_response = CoverageClient.get_coverage_by_patient_id(patient_id)
+        coverages = []
+        if 'coverage' in coverage_response:
+            total_coverage = coverage_response.get('coverage', {}).get('total', 0)
+            coverage_entries = coverage_response.get('coverage', {}).get('entry', [])
+            for entry in coverage_entries:
+                resource = entry.get('resource', {})
+                class_info = resource.get('class', [{}])[0]
+                beneficiary_reference = resource.get('beneficiary', {}).get('reference', "")
+                patient_id_from_response = beneficiary_reference.split("/")[-1] if beneficiary_reference else ""
+                coverage_info = {
+                    "id": resource.get('id', ''),
+                    "patient_id": patient_id_from_response,
+                    "providerName": resource.get('payor', [{}])[0].get('display', ''),
+                    "policyNumber": resource.get('subscriberId', ''),
+                    "groupNumber": class_info.get('name', ''),
+                    "note": class_info.get('value', '')
+                }
+                coverages.append(coverage_info)
+        elif len(coverage_response) > 0:
+            total_coverage = coverage_response[0].get('coverage', {}).get('total', 0)
+        patient_result["insurance"] = "No" if total_coverage == 0 else "Yes"
+        patient_result["coverage_details"] = coverages
+        return patient_result

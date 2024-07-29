@@ -24,14 +24,7 @@ def run(message):
     order_data = message.get("order_group")
     visit_data = message.get("visit")
     entry = []
-    patient = prepare_patient(patient_data["patient"])
-    patient_exist = False
-
-    patient_url = "Patient"
-    if Patient.get({"id": patient.id}):
-        patient_url += f"/{patient.id}"
-        patient_exist = True
-
+    patient, patient_url = prepare_patient(patient_data["patient"])
     if "patient" in patient_data:
         entry.append(
             {
@@ -158,7 +151,7 @@ def run(message):
 
     try:
         API.bundle(entry=entry, type="transaction")
-        return {"patient_exist": patient_exist, "patient_id": patient.id}
+        return {"patient_url": patient_url, "patient_id": patient.id}
     except requests.exceptions.RequestException as e:
         if e.response is not None:
             print(e.response.json())
