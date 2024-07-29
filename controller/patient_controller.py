@@ -193,6 +193,8 @@ class PatientClient:
             if patient:
                 logger.info(f"Patient Found: {patient_id}")
                 formatted_data = PatientClient.extract_patient_data(patient)
+                insurance_detail = CoverageClient.get_insurance_detail(patient_id)
+                formatted_data["insurance"] = insurance_detail
                 return formatted_data
             return Response(
                 content="Patient not found", status_code=status.HTTP_404_NOT_FOUND

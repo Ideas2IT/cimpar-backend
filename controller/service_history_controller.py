@@ -25,14 +25,12 @@ class ServiceHistoryClient:
                     "filteredImmunization", patient_id, name, page, count
                 )
             else:
-                response = ServiceHistoryClient.custom_query_with_pagination(
+                final_response = ServiceHistoryClient.custom_query_with_pagination(
                     "filteredImmunizationObservation", patient_id, name, page, count
                 )
-                final_response = []
                 if int(page) == 1:
-                    final_response = AppointmentClient.get_appointment_by_patient_id(patient_id, UPCOMING_APPOINTMENT)
-                if response and response.get("data", []):
-                    final_response.extend(response.get("data", []))
+                    response = AppointmentClient.get_appointment_by_patient_id(patient_id, UPCOMING_APPOINTMENT)
+                    final_response["data"] = response + final_response.get("data", [])
             return JSONResponse(
                 content=final_response,
                 status_code=status.HTTP_200_OK
