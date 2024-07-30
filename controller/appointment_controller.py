@@ -2,11 +2,14 @@ import logging
 import traceback
 import json
 from fastapi import status
+from typing import Any
 from fastapi.responses import JSONResponse
 
 from aidbox.base import CodeableConcept, Reference, Coding, Annotation
 from aidbox.resource.appointment import Appointment_Participant
 from models.appointment_validation import StatusModel
+from HL7v2 import get_md5
+from HL7v2.resources.observation import get_status
 
 from constants import (
     PATIENT_REFERENCE,  
@@ -37,6 +40,44 @@ class AppointmentClient:
     def create_appointment(patient_id: str, app: AppoinmentModel):
         try:
             response_data = {}
+            response_condition = Condition.make_request(
+                method="GET", endpoint=f"/fhir/Condition/?subject=Patient/{patient_id}"
+            )
+            response_allergy = AllergyIntolerance.make_request(
+                method="GET",
+                endpoint=f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}",
+            )
+            data: dict[str, bool | Any] = ConditionClient.get_condition(response_condition.json())
+            allergy_response = ConditionClient.get_allergy(response_allergy.json())
+            if allergy_response.get("is_current_allergy_exist"):
+                response_data['is_current_allergy_exist'] = True
+            if allergy_response.get("is_other_allergy_exist"):
+                response_data["is_other_allergy_exist"] = True
+            if data.get('is_current_condition_exist'):
+                response_data['is_current_condition_exist'] = True
+            if data.get('is_other_condition_exist'):
+                response_data['is_other_condition_exist'] = True
+            if not app.current_medical_condition:
+                if data.get('is_current_resource'):
+                    current_data = Condition(**data.get('is_current_resource'))
+                    current_data.delete()
+                    response_data["current_condition"] = "deleted"
+            if not app.other_medical_condition:
+                if data.get('is_other_resource'):
+                    other_data = Condition(**data.get('is_other_resource'))
+                    other_data.delete()
+                    response_data["other_condition"] = "deleted"
+            if not app.current_allergy:
+                if allergy_response.get("is_current_resource"):
+                    current_allergy_data = AllergyIntolerance(**allergy_response.get("is_current_resource"))
+                    current_allergy_data.delete()
+                    response_data["current_allergy"] = "deleted"
+            if not app.other_allergy:
+                if allergy_response.get("is_other_resource"):
+                    other_allergy_data = AllergyIntolerance(**allergy_response.get("is_other_resource"))
+                    other_allergy_data.delete()
+                    response_data["other_allergy"] = "deleted"
+
             appointment = Appointment(
                 status=APPOINTMENT_STATUS,
                 description=app.other_reason,
@@ -64,8 +105,9 @@ class AppointmentClient:
             appointment.save()
             response_data["appointment_id"] = appointment.id if appointment else None
 
-            if app.current_medical_condition:
+            if app.current_medical_condition and app.current_condition_id:
                 current_condition = Condition(
+                    id=app.current_condition_id,
                     code=CodeableConcept(
                         coding=[
                             Coding(
@@ -80,10 +122,30 @@ class AppointmentClient:
                     note=[Annotation(text=CURRENT)],
                 )
                 current_condition.save()
-                response_data["current_condition_id"] = current_condition.id if current_condition else None
+                response_data["current_condition_id"] = current_condition.id
+            else:
+                if app.current_medical_condition and data.get('is_current_condition_exist') == False:
+                    current_condition = Condition(
+                        code=CodeableConcept(
+                            coding=[
+                                Coding(
+                                    system=concept.system,
+                                    code=concept.code,
+                                    display=concept.display,
+                                )
+                                for concept in app.current_medical_condition
+                            ]
+                        ),
+                        subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+                        note=[Annotation(text=CURRENT)],
+                    )
+                    current_condition.save()
+                    response_data["current_condition_id"] = current_condition.id
+                    response_data["current_condition"] = "Created"
 
-            if app.other_medical_condition:
+            if app.other_medical_condition and app.other_condition_id:
                 additional_condition = Condition(
+                    id=app.other_condition_id,
                     code=CodeableConcept(
                         coding=[
                             Coding(
@@ -98,10 +160,30 @@ class AppointmentClient:
                     note=[Annotation(text=OTHER)],
                 )
                 additional_condition.save()
-                response_data["other_medication_id"] = additional_condition.id if additional_condition else None
+                response_data["other_condition_id"] = additional_condition.id
+            else:
+                if app.other_medical_condition and data.get('is_other_condition_exist') == False:
+                    additional_condition = Condition(
+                        code=CodeableConcept(
+                            coding=[
+                                Coding(
+                                    system=concept.system,
+                                    code=concept.code,
+                                    display=concept.display,
+                                )
+                                for concept in app.other_medical_condition
+                            ]
+                        ),
+                        subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+                        note=[Annotation(text=OTHER)],
+                    )
+                    additional_condition.save()
+                    response_data["other_condition_id"] = additional_condition.id
+                    response_data["other_condition"] = "Created"
 
-            if app.current_allergy:
+            if app.current_allergy and app.current_allergy_id:
                 current_allergy = AllergyIntolerance(
+                    id=app.current_allergy_id,
                     code=CodeableConcept(
                         coding=[
                             Coding(
@@ -116,10 +198,30 @@ class AppointmentClient:
                     note=[Annotation(text=CURRENT)],
                 )
                 current_allergy.save()
-                response_data["current_allergy"] = current_allergy.id if current_allergy else None
+                response_data["current_allergy"] = current_allergy.id
+            else:
+                if app.current_allergy and allergy_response.get("is_current_allergy_exist") == False:
+                    current_allergy = AllergyIntolerance(
+                        code=CodeableConcept(
+                            coding=[
+                                Coding(
+                                    system=concept.system,
+                                    code=concept.code,
+                                    display=concept.display,
+                                )
+                                for concept in app.current_allergy
+                            ]
+                        ),
+                        patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+                        note=[Annotation(text=CURRENT)],
+                    )
+                    current_allergy.save()
+                    response_data["current_allergy_id"] = current_allergy.id
+                    response_data["current_allergy"] = "Created"
 
-            if app.other_allergy:
-                other_allergy = AllergyIntolerance(
+            if app.other_allergy and app.other_allergy_id:
+                additional_allergy = AllergyIntolerance(
+                    id=app.other_allergy_id,
                     code=CodeableConcept(
                         coding=[
                             Coding(
@@ -133,8 +235,27 @@ class AppointmentClient:
                     patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                     note=[Annotation(text=OTHER)],
                 )
-                other_allergy.save()
-                response_data["other_allergy"] = other_allergy.id if other_allergy else None
+                additional_allergy.save()
+                response_data["other_allergy"] = additional_allergy.id
+            else:
+                if app.other_allergy and allergy_response.get("is_other_allergy_exist") == False:
+                    additional_allergy = AllergyIntolerance(
+                        code=CodeableConcept(
+                            coding=[
+                                Coding(
+                                    system=concept.system,
+                                    code=concept.code,
+                                    display=concept.display,
+                                )
+                                for concept in app.other_allergy
+                            ]
+                        ),
+                        patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+                        note=[Annotation(text=OTHER)],
+                    )
+                    additional_allergy.save()
+                    response_data["other_allergy_id"] = additional_allergy.id
+                    response_data["other_allergy"] = "Created"
             response_data["created"] = True
             logger.info(f"Added Successfully in DB: {response_data}")
             return response_data
@@ -386,24 +507,37 @@ class AppointmentClient:
         data = json.loads(appointment.body)
         appointment_value = AppointmentClient.get_patient_id_and_service_type_from_appointment(data)
         if appointment_value:
+            unique_patient_ids = set(patient.get("patient_id") for patient in appointment_value)
+            patient_details_map = {}
+            insurance_details_map = {}
+            for patient_id in unique_patient_ids:
+                try:
+                    patient_details = AppointmentClient.get_patient_detail(patient_id)
+                    patient_details_map[patient_id] = patient_details
+                except Exception as e:
+                    logger.error(f"Unable to fetch the patient details for patient_id {patient_id}: {e}")
+                    patient_details_map[patient_id] = {}
+
+                try:
+                    coverage_response = CoverageClient.get_insurance_detail(patient_id)
+                    insurance_details_map[patient_id] = coverage_response
+                except Exception as e:
+                    logger.error(f"Unable to fetch the insurance details for patient_id {patient_id}: {e}")
+                    insurance_details_map[patient_id] = {}
             for patient in appointment_value:
                 patient_id = patient.get("patient_id")
-                patient_details = AppointmentClient.get_patient_detail(patient_id)
+                patient_details = patient_details_map.get(patient_id, {})
+                coverage_response = insurance_details_map.get(patient_id, {})
                 patient_result = {
-                    "appointmentId": patient.get("appointment_id", ""),
-                    "patientId": patient_details.get("id"),
+                    "appointmentId": patient.get("appointment_id"),
+                    "patientId": patient_id,
                     "name": (patient_details.get('firstName', '') + " " + patient_details.get('lastName', '')).strip(),
-                    "dob": patient_details.get('dob', ""),
-                    "gender": patient_details.get("gender", ""),
-                    "phoneNumber": patient_details.get("phoneNo", ""),
-                    "appointmentFor": patient.get("service_type", ""),
-                    "reason" : patient.get("reason_for_test", ""),
-                    'start': patient.get("start", ""),
-                    'end': patient.get("end", ""),
+                    "dob": patient_details.get('dob'),
+                    "gender": patient_details.get("gender"),
+                    "appointmentFor": patient.get("service_type"),
+                    'start': patient.get("start"),
+                    'end': patient.get("end"),
                 }
-                coverage_response = CoverageClient.get_insurance_detail(patient_id)
-                patient_result["insurance"] = coverage_response.get("insurance")
-                patient_result["coverage_details"] = coverage_response.get("coverage_details", [])
                 results.append(patient_result)
             final_result = {
                 "data": results,
@@ -414,6 +548,7 @@ class AppointmentClient:
                 "data": [],
                 "pagination": {}
             }
+
         return JSONResponse(
             content=final_result,
             status_code=status.HTTP_200_OK
@@ -424,25 +559,44 @@ class AppointmentClient:
     def formated_data(formatted_data: list):
         appointment_values = AppointmentClient.get_appointment_data(formatted_data)
         results = [] 
-        for appointment in appointment_values:  
-            for item in formatted_data: 
-                for participant in item["resource"]["participant"]:
-                    patient_id = participant["actor"]["id"]
-        patient_details = AppointmentClient.get_patient_detail(patient_id)
-        insurance_detail = CoverageClient.get_insurance_detail(patient_id)
-        result = {
-            "patientId": patient_details.get("id"),
-            "name": (patient_details.get('firstName', '') + " " + patient_details.get('lastName', '')).strip(),
-            "dob": patient_details.get('dob'),
-            "gender": patient_details.get("gender"),
-            "insurance": insurance_detail.get("insurance"),
-            "appointmentId": appointment.get("appointment_id"),
-            "appointmentFor": appointment.get("service_type"),
-            'start': appointment.get("start"),
-            'end': appointment.get("end")
-        }
-        results.append(result) 
+        unique_patient_ids = set(each_appointment["patient_id"] for each_appointment in appointment_values)
+        patient_details_map = {}
+        insurance_details_map = {}
+        for patient_id in unique_patient_ids:
+            try:
+                patient_details = AppointmentClient.get_patient_detail(patient_id)
+                patient_details_map[patient_id] = patient_details
+            except Exception as e:
+                logger.error(f"Unable to fetch the patient details for patient_id {patient_id}: {e}")
+                patient_details_map[patient_id] = {}
+            try:
+                insurance_detail = CoverageClient.get_insurance_detail(patient_id)
+                insurance_details_map[patient_id] = insurance_detail
+            except Exception as e:
+                logger.error(f"Unable to fetch the Insurance details for patient_id {patient_id}: {e}")
+                insurance_details_map[patient_id] = {}
+        patient_id_extract = []
+        results = []
+        for each_appointment in appointment_values:
+            patient_id = each_appointment["patient_id"]
+            patient_id_extract.append(patient_id)
+            patient_details = patient_details_map.get(patient_id, {})
+            insurance_detail = insurance_details_map.get(patient_id, {})
+            result = {
+                "patientId": patient_details.get("id"),
+                "name": (patient_details.get('firstName', '') + " " + patient_details.get('lastName', '')).strip(),
+                "dob": patient_details.get('dob'),
+                "gender": patient_details.get("gender"),
+                "insurance": insurance_detail.get("insurance"),
+                "appointmentId": each_appointment.get("appointment_id"),
+                "appointmentFor": each_appointment.get("service_type"),
+                'start': each_appointment.get("start"),
+                'end': each_appointment.get("end")
+            }
+            results.append(result)
+
         return results
+
 
     @staticmethod
     def get_patient_detail(patient_id):
@@ -518,7 +672,7 @@ class AppointmentClient:
                 notes = resource.get("note", [])
                 code_display = [coding.get("display") for coding in resource.get("code", {}).get("coding", [])]
                 resource_id = resource.get("id")
-                
+
                 patient_reference = resource.get("patient", {}).get("reference", "") or resource.get("subject", {}).get("reference", "")
                 patient_id = patient_reference.split("/")[-1] if patient_reference else ""
                 

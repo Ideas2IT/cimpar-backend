@@ -49,18 +49,18 @@ app.add_middleware(
 app.state.logger = simple_logger
 
 # Add the Router
-app.include_router(insurance_routes.router, prefix="/api", tags=["INSURANCE"])
-app.include_router(patient_routes.router, prefix="/api", tags=["PATIENT"])
-app.include_router(encounter_routes.router, prefix="/api", tags=["ENCOUNTER"])
-app.include_router(medication_routes.router, prefix="/api", tags=["MEDICATION"])
 app.include_router(account_router.router, prefix="/api", tags=["ACCOUNT"])
+app.include_router(integration_pipeline_router.router, prefix="/api/HL7v2", tags=["AIDBOX_INTEGRATION"])
 app.include_router(condition_allergy_routes.router, prefix="/api", tags=["ALLERGY_CONDITION"])
 app.include_router(appointment_routes.router, prefix="/api", tags=["APPOINTMENT"])
-app.include_router(lab_result_routes.router, prefix="/api", tags=["LAB_RESULT"])
-app.include_router(service_history_routes.router, prefix="/api", tags=["SERVICE_HISTORY"])
 app.include_router(custom_message_router.router, prefix="/api", tags=["CUSTOM_MESSAGE"])
+app.include_router(encounter_routes.router, prefix="/api", tags=["ENCOUNTER"])
+app.include_router(insurance_routes.router, prefix="/api", tags=["INSURANCE"])
+app.include_router(lab_result_routes.router, prefix="/api", tags=["LAB_RESULT"])
 app.include_router(master_routers.router, prefix="/api", tags=["MASTER"])
-app.include_router(integration_pipeline_router.router, prefix="/api/HL7v2", tags=["AIDBOX_INTEGRATION"])
+app.include_router(medication_routes.router, prefix="/api", tags=["MEDICATION"])
+app.include_router(patient_routes.router, prefix="/api", tags=["PATIENT"])
+app.include_router(service_history_routes.router, prefix="/api", tags=["SERVICE_HISTORY"])
 
 
 @app.get("/api/documentation", include_in_schema=False)
