@@ -19,6 +19,10 @@ class AppoinmentModel(BaseModel):
     schedule_time: str
     reason_for_test: str
     other_reason: Optional[str] = None
+    current_condition_id: Optional[str] = None
+    other_condition_id: Optional[str] = None
+    current_allergy_id: Optional[str] = None
+    other_allergy_id: Optional[str] = None
     current_medical_condition: Optional[List[Concept]] = None
     other_medical_condition: Optional[List[Concept]] = None
     current_allergy: Optional[List[Concept]] = None
