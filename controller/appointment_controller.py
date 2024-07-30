@@ -328,7 +328,12 @@ class AppointmentClient:
     ):
         try:
             result = []
-            patient_details = AppointmentClient.get_patient_detail(patient_id)
+            try:
+                patient_details = AppointmentClient.get_patient_detail(patient_id)
+                patient_id = patient_details["id"]
+            except Exception as e:
+                logger.error(f"Unable to fetch the patient details: {e}")
+                patient_details = {}
             appointment = Appointment.make_request(
                 method="GET",
                 endpoint=f"/fhir/Appointment/{appointment_id}?participant=Patient/{patient_id}",
@@ -514,6 +519,7 @@ class AppointmentClient:
                 try:
                     patient_details = AppointmentClient.get_patient_detail(patient_id)
                     patient_details_map[patient_id] = patient_details
+                    patient_id = patient_details["id"]
                 except Exception as e:
                     logger.error(f"Unable to fetch the patient details for patient_id {patient_id}: {e}")
                     patient_details_map[patient_id] = {}
@@ -566,6 +572,7 @@ class AppointmentClient:
             try:
                 patient_details = AppointmentClient.get_patient_detail(patient_id)
                 patient_details_map[patient_id] = patient_details
+                patient_id = patient_details["id"]
             except Exception as e:
                 logger.error(f"Unable to fetch the patient details for patient_id {patient_id}: {e}")
                 patient_details_map[patient_id] = {}
