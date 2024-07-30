@@ -1,6 +1,6 @@
 import logging
 import traceback
-from typing import Dict, Any
+from typing import Any
 
 from fastapi import status
 from fastapi.responses import JSONResponse
