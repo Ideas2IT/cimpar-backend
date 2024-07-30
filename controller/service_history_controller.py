@@ -47,7 +47,9 @@ class ServiceHistoryClient:
             return JSONResponse(
                 content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
-
+        
+        
+    @staticmethod
     def process_immunization(service_history):
         immunization_entries = []
         if not service_history:
@@ -85,6 +87,8 @@ class ServiceHistoryClient:
             "total_pages": total_pages
         }
 
+
+    @staticmethod
     def process_lab_result(service_history):
         service_history_entries = []
         if not service_history:
@@ -116,7 +120,9 @@ class ServiceHistoryClient:
             "total_items": service_history.get('total_items'),
             "total_pages": service_history.get('total_pages')
         }
-        
+    
+
+    @staticmethod    
     def create_final_values(service_history, immunization):
         processed_immunization = ServiceHistoryClient.process_immunization(immunization)
         processed_lab_result = ServiceHistoryClient.process_lab_result(service_history)
@@ -128,6 +134,7 @@ class ServiceHistoryClient:
         return combined_entries
     
 
+    @staticmethod
     def extract_immunization_entries(data):
         immunization_entries = []
         current_page = data.get("current_page", 0)
@@ -161,6 +168,7 @@ class ServiceHistoryClient:
         }
     
 
+    @staticmethod
     def extract_lab_result(service_history):
         imaging_history_entries = []
         if not service_history:

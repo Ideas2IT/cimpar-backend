@@ -235,7 +235,7 @@ class ConditionClient:
                     other_allergy_data.delete()
                     result["other_allergy"] = "deleted"
 
-            if con.current_condition and con.current_allergy_id:
+            if con.current_condition and con.current_condition_id:
                 current_condition = Condition(
                     id=con.current_condition_id,
                     code=CodeableConcept(
