@@ -219,7 +219,8 @@ class AppointmentClient:
                 insurance_detail = CoverageClient.get_insurance_detail(patient_id)
                 participant_reference = appointment_detail.get("participant", [{}])[0].get("actor", {}).get("reference", "")
                 patient_id_extracted = participant_reference.split('/')[1] if participant_reference else ""
-                service_type_display = appointment_detail.get("serviceType", [{}])[0].get("coding", [{}])[0].get("display", "")
+                service_type_coding = appointment_detail.get("serviceType", [{}])[0].get("coding", [{}])
+                service_type_display = ', '.join([coding['display'] for coding in service_type_coding if 'display' in coding])
                 patient_result = {
                     "appointmentId": appointment_detail.get("id"),
                     "patientId": patient_id_extracted,
