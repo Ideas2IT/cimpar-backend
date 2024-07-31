@@ -280,6 +280,11 @@ class AppointmentClient:
                 endpoint=f"/fhir/Appointment/?.participant.0.actor.id={patient_id}&.comment={search}",
             )
             appointment_data = appointment.json()
+            if appointment_data.get('total', 0) == 0:
+                return JSONResponse(
+                    content=[],
+                    status_code=status.HTTP_200_OK
+            )
             result = appointment_data["entry"]
             for each_result in result:
                 if "resource" in each_result and each_result["resource"]:
