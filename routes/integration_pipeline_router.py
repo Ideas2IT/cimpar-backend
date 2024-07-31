@@ -22,10 +22,10 @@ async def convert_message(message):
     return response.json()
 
 
-async def request_wrapper(raw_data, action):
+async def request_wrapper(raw_data):
     try:
         parsed_data = await convert_message(raw_data.decode("utf-8"))
-        response = action(parsed_data["parsed"]["parsed"])
+        response = R01.run(parsed_data["parsed"]["parsed"])
         return response
     except Exception as e:
         response = json.dumps({'error': str(e)}).encode('utf-8')
@@ -38,7 +38,7 @@ async def request_wrapper(raw_data, action):
 async def hl7v2_oru_r01(request: Request, raw_data: str =Body(..., media_type="text/plain")):
     raw_data = await request.body()
     logger.info("raw_data: %s" % raw_data)
-    response = await request_wrapper(raw_data, R01.run)
+    response = await request_wrapper(raw_data)
     logger.info("response: %s" % response)
     return response
 

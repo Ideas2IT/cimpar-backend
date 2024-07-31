@@ -21,8 +21,8 @@ from HL7v2.resources.diagnosticreport import prepare_diagnostic_report
 
 def run(message):
     patient_data = message.get("patient_group")
-    order_data = message.get("order_group")
-    visit_data = message.get("visit")
+    order_data = message.get("order_group") or message.get("patient_group", {}).get("order_group", [])
+    visit_data = message.get("visit") or message.get("patient_group", {}).get("visit", {})
     entry = []
     patient, patient_url = prepare_patient(patient_data["patient"])
     if "patient" in patient_data:
