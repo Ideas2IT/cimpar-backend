@@ -45,8 +45,7 @@ class ServiceHistoryClient:
             return JSONResponse(
                 content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
-        
-        
+
     @staticmethod
     def process_immunization(service_history):
         immunization_entries = []
@@ -85,7 +84,6 @@ class ServiceHistoryClient:
             "total_pages": total_pages
         }
 
-
     @staticmethod
     def process_lab_result(service_history):
         service_history_entries = []
@@ -118,9 +116,8 @@ class ServiceHistoryClient:
             "total_items": service_history.get('total_items'),
             "total_pages": service_history.get('total_pages')
         }
-    
 
-    @staticmethod    
+    @staticmethod
     def create_final_values(service_history, immunization):
         processed_immunization = ServiceHistoryClient.process_immunization(immunization)
         processed_lab_result = ServiceHistoryClient.process_lab_result(service_history)
@@ -130,7 +127,6 @@ class ServiceHistoryClient:
             processed_lab_result = processed_lab_result if processed_lab_result else []
         combined_entries = {**processed_immunization, **processed_lab_result}
         return combined_entries
-    
 
     @staticmethod
     def extract_immunization_entries(data):
@@ -164,7 +160,6 @@ class ServiceHistoryClient:
             "total_items": total_items,
             "total_pages": total_pages
         }
-    
 
     @staticmethod
     def extract_lab_result(service_history):
@@ -232,7 +227,5 @@ class ServiceHistoryClient:
                 "total_pages": (total_count // page_size) + (1 if total_count % page_size != 0 else 0)
             }
         }
-        if not data.get('data', []):
-            final_response = []
         return final_response
 

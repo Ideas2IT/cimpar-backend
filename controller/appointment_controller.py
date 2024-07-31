@@ -271,7 +271,6 @@ class AppointmentClient:
                 content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
 
-
     @staticmethod
     def get_appointment_by_patient_id(patient_id: str, search: str):
         try:
@@ -281,10 +280,7 @@ class AppointmentClient:
             )
             appointment_data = appointment.json()
             if appointment_data.get('total', 0) == 0:
-                return JSONResponse(
-                    content=[],
-                    status_code=status.HTTP_200_OK
-            )
+                return []
             result = appointment_data["entry"]
             for each_result in result:
                 if "resource" in each_result and each_result["resource"]:
