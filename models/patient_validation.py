@@ -7,11 +7,10 @@ from datetime import datetime, timezone
 
 def validate_date_of_birth(timestamp):
     try:
-        timestamp = abs(timestamp) / 1000.0
-        utc_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+        utc_dt = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
     except (OverflowError, ValueError) as e:
         raise ValueError('Invalid DOB %s' %timestamp)
-    return utc_dt.strftime('%Y-%m-%d')
+    return utc_dt
 
 
 def validate_phone_number(phone_number: str) -> str:
