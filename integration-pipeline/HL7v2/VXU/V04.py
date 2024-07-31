@@ -59,6 +59,7 @@ def run(message):
 
     try:
         API.bundle(entry=entry, type="transaction")
+        return {"patient_url": patient_url, "patient_id": patient.id}
     except requests.exceptions.RequestException as e:
         logger.error("Unable to create the VX04: %s" % str(e))
         if e.response is not None:
