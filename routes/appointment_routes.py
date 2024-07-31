@@ -42,3 +42,11 @@ async def get_appointment(
         page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
     logger.info(f"fetching values")
     return AppointmentClient.get_appointment(patient_name, start_date, end_date, service_name, page, page_size)
+
+
+@router.put("/appointment/{appointment_id}")
+@permission_required("APPOINTMENT", "UPDATE")
+async def update_lab_status(appointment_id: str, update_status: StatusModel, request: Request):
+    logger.info(f"Appointment ID:{appointment_id}")
+    return AppointmentClient.update_appointment_status(appointment_id, update_status)
+

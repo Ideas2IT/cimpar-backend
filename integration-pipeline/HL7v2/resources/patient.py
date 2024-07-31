@@ -80,8 +80,8 @@ def prepare_patient(data):
         )
     if "telecom" in data and data["telecom"]:
         existing_telecom_dict = {}
-        contact = patient.contact[0]
-        if contact.telecom:
+        contact = patient.contact and patient.contact[0]
+        if contact and contact.telecom:
             for tp in contact.telecom:
                 if tp.system == "email":
                     existing_telecom_dict[(tp.system,)] = tp
