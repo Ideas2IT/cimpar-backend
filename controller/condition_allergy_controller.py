@@ -85,7 +85,6 @@ class ConditionClient:
                 additional_condition.save()
                 result["other_condition_id"] = additional_condition.id
 
-
             if con.current_allergy and allergy_response.get("is_current_allergy_exist") == False:
                 current_allergy = AllergyIntolerance(
                     code=CodeableConcept(
@@ -103,7 +102,6 @@ class ConditionClient:
                 )
                 current_allergy.save()
                 result["current_allergy_id"] = current_allergy.id
-
 
             if con.additional_allergy and allergy_response.get("is_other_allergy_exist") == False:
                 additional_allergy = AllergyIntolerance(

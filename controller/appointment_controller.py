@@ -47,24 +47,24 @@ class AppointmentClient:
                 method="GET",
                 endpoint=f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}",
             )
-            data: dict[str, bool | Any] = ConditionClient.get_condition(response_condition.json())
+            condition_response: dict[str, bool | Any] = ConditionClient.get_condition(response_condition.json())
             allergy_response = ConditionClient.get_allergy(response_allergy.json())
             if allergy_response.get("is_current_allergy_exist"):
                 response_data['is_current_allergy_exist'] = True
             if allergy_response.get("is_other_allergy_exist"):
                 response_data["is_other_allergy_exist"] = True
-            if data.get('is_current_condition_exist'):
+            if condition_response.get('is_current_condition_exist'):
                 response_data['is_current_condition_exist'] = True
-            if data.get('is_other_condition_exist'):
+            if condition_response.get('is_other_condition_exist'):
                 response_data['is_other_condition_exist'] = True
             if not app.current_medical_condition:
-                if data.get('is_current_resource'):
-                    current_data = Condition(**data.get('is_current_resource'))
+                if condition_response.get('is_current_resource'):
+                    current_data = Condition(**condition_response.get('is_current_resource'))
                     current_data.delete()
                     response_data["current_condition"] = "deleted"
             if not app.other_medical_condition:
-                if data.get('is_other_resource'):
-                    other_data = Condition(**data.get('is_other_resource'))
+                if condition_response.get('is_other_resource'):
+                    other_data = Condition(**condition_response.get('is_other_resource'))
                     other_data.delete()
                     response_data["other_condition"] = "deleted"
             if not app.current_allergy:
@@ -124,7 +124,7 @@ class AppointmentClient:
                 current_condition.save()
                 response_data["current_condition_id"] = current_condition.id
             else:
-                if app.current_medical_condition and data.get('is_current_condition_exist') == False:
+                if app.current_medical_condition and condition_response.get('is_current_condition_exist') == False:
                     current_condition = Condition(
                         code=CodeableConcept(
                             coding=[
@@ -162,7 +162,7 @@ class AppointmentClient:
                 additional_condition.save()
                 response_data["other_condition_id"] = additional_condition.id
             else:
-                if app.other_medical_condition and data.get('is_other_condition_exist') == False:
+                if app.other_medical_condition and condition_response.get('is_other_condition_exist') == False:
                     additional_condition = Condition(
                         code=CodeableConcept(
                             coding=[

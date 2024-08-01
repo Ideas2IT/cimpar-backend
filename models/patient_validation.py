@@ -1,17 +1,17 @@
 import logging
 import re
 from typing import Optional
-from datetime import datetime
 from pydantic import BaseModel, EmailStr, field_validator
-from datetime import datetime, timezone
+from datetime import datetime
 
 
 def validate_date_of_birth(timestamp):
     try:
-        utc_dt = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
-    except (OverflowError, ValueError) as e:
+        dob_dt = datetime.strptime(timestamp, '%m/%d/%Y')
+        utc_dt = dob_dt.strftime('%Y-%m-%d')
+    except ValueError as e:
         logging.info(f"Error: {e}")
-        raise ValueError('Invalid DOB %s' %timestamp)
+        raise ValueError('Invalid DOB %s' % timestamp)
     return utc_dt
 
 
@@ -45,7 +45,7 @@ class PatientModel(BaseModel):
     middleName: Optional[str] = ""
     lastName: Optional[str] = ""
     gender: str
-    dob: int
+    dob: str
     phoneNo: Optional[str] = None
     alternativeNumber: Optional[str] = ""
     city: str
