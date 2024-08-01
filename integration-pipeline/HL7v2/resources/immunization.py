@@ -19,7 +19,7 @@ def prepare_immunization(data, patient: Patient) -> Immunization:
         system = data["administered_code"]["system"],
         code = data["administered_code"]["code"],
         display = data["administered_code"]["display"]
-    )] 
+    )]
 
     if (("alternate_system" in data["administered_code"]) or ("alternate_code" in data["administered_code"]) or ("alternate_display" in data["administered_code"])):
         vaccineCoding.append(Coding(
@@ -83,8 +83,8 @@ def prepare_immunization(data, patient: Patient) -> Immunization:
     if "administered_amount" in data:
         immunization.doseQuantity = Quantity(
             system = "http://unitsofmeasure.org",
-            value = 20,
-            code = "mg"
+            value = data.get("administered_amount", "20"),
+            code = data.get("administered_unit", {}).get("code", "mg")
         )
 
     if "substance_expiration_date" in data:

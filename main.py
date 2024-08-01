@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import JSONResponse
 import sys
 import os
 from os.path import abspath, dirname, join
@@ -125,6 +127,27 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = exc.errors()
+    formatted_errors = []
+    try:
+        for error in errors:
+            formatted_errors.append({
+                "field": error['loc'][-1],
+                "message": error['msg']
+            })
+    except Exception as e:
+        simple_logger.error(f"Error in exception handler: {e}")
+        formatted_errors = errors
+
+    error_response_data = {
+        "error": "Validation Error",
+        "details": formatted_errors
+    }
+    return JSONResponse(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, content=error_response_data)
 
 
 if __name__ == '__main__':

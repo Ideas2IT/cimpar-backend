@@ -159,10 +159,10 @@ class AuthClient:
             resp["role"] = perm_res.json()["cimpar_role"]["id"]
             return resp
         except Exception as e:
-            logger.error(f"Unable to create a token: {str(e)}")
+            logger.error(f"Unable to login: {str(e)}")
             logger.error(traceback.format_exc())
             error_response_data = {
-                "error": "Unable to create a token",
+                "error": "Unable to login: Incorrect username or password",
                 "details": str(e),
             }
             return JSONResponse(
@@ -219,7 +219,7 @@ class AuthClient:
             logger.error(traceback.format_exc())
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                content=f"Unable to change the password: {str(e)}")
+                content=f"Unable to change the password: Incorrect Username or password")
 
     @staticmethod
     def reset_password(email):

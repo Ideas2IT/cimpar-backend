@@ -1,11 +1,8 @@
 from fastapi import status
 from fastapi.responses import JSONResponse
-from typing import Optional
 import logging
 import traceback
 
-from controller.lab_result_controller import ObservationClient
-from controller.hl7_immunization_controller import HL7ImmunizationClient
 from services.aidbox_service import AidboxApi
 from controller.appointment_controller import AppointmentClient
 from constants import UPCOMING_APPOINTMENT
@@ -20,6 +17,9 @@ class ServiceHistoryClient:
                 final_response = ServiceHistoryClient.custom_query_with_pagination(
                     "filteredObservation", patient_id, name, page, count
                 )
+                if int(page) == 1:
+                    response = AppointmentClient.get_appointment_by_patient_id(patient_id, UPCOMING_APPOINTMENT)
+                    final_response["data"] = response + final_response.get("data", [])
             elif service_type is not None and service_type.lower() == "immunization":
                 final_response = ServiceHistoryClient.custom_query_with_pagination(
                     "filteredImmunization", patient_id, name, page, count
