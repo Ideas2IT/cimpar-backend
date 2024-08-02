@@ -114,11 +114,11 @@ class MedicationClient:
             result = {}
             response_statement = MedicationStatement.make_request(
                 method="GET",
-                endpoint=f"/fhir/MedicationStatement/?subject=Patient/{patient_id}",
+                endpoint=f"/fhir/MedicationStatement/?subject=Patient/{patient_id}&_sort=-lastUpdated",
             )
             response_request = MedicationRequest.make_request(
                 method="GET",
-                endpoint=f"/fhir/MedicationRequest/?subject=Patient/{patient_id}",
+                endpoint=f"/fhir/MedicationRequest/?subject=Patient/{patient_id}&_sort=-lastUpdated",
             )
             statement = response_statement.json()
             request = response_request.json()

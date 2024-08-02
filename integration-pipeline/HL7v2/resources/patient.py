@@ -98,7 +98,7 @@ def prepare_patient(data):
                 existing_telecom_dict[("home", "phone")] = ContactPoint(use="home", system="phone", value=value)
             elif system == "phone" and use == "temp":
                 existing_telecom_dict[("temp", "phone")] = ContactPoint(use="temp", system="phone", value=value)
-        patient.telecom = list(existing_telecom_dict.values())
+        patient.contact[0].telecom = list(existing_telecom_dict.values())
 
     if "identifier" in data:
         patient.identifier = [

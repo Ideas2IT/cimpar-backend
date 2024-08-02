@@ -115,7 +115,10 @@ class CoverageClient:
     @staticmethod
     def get_coverage_by_patient_id(patient_id: str):
         try:
-            response_coverage = Coverage.make_request(method="GET", endpoint=f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
+            response_coverage = Coverage.make_request(
+                method="GET",
+                endpoint=f"/fhir/Coverage/?beneficiary=Patient/{patient_id}&_sort=-lastUpdated"
+            )
             coverage = response_coverage.json() 
             
             if coverage.get('total', 0) == 0:

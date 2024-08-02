@@ -161,11 +161,11 @@ class ConditionClient:
     def get_condition_by_patient_id(patient_id: str):
         try:
             response_condition = Condition.make_request(
-                method="GET", endpoint=f"/fhir/Condition/?subject=Patient/{patient_id}"
+                method="GET", endpoint=f"/fhir/Condition/?subject=Patient/{patient_id}&_sort=-lastUpdated"
             )
             response_allergy = AllergyIntolerance.make_request(
                 method="GET",
-                endpoint=f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}",
+                endpoint=f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}&_sort=-lastUpdated",
             )
             if response_condition.json().get('total', 0) == 0 and response_allergy.json().get('total', 0) == 0:
                 logger.info(f"No condition and allergy found for patient: {patient_id}")

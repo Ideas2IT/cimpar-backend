@@ -146,7 +146,8 @@ def paginate(model: Type[T], page: int = 1, page_size: int = 10) -> Dict[str, An
     try:
         query_params = {
             "_count": page_size,
-            "_page": page
+            "_page": page,
+            "_sort": "-lastUpdated"
         }
         response = model.get(query_params)
         if "entry" in response and response["entry"]:

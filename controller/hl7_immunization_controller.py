@@ -43,7 +43,11 @@ class HL7ImmunizationClient:
     def get_immunizations_by_patient_id(patient_id: str, page: int, count: int):
         try:
             result = {}
-            response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization?patient=Patient/{patient_id}&_page={page}&_count={count}")
+            response_immunization = Immunization.make_request(
+                method="GET",
+                endpoint=f"/fhir/Immunization?patient=Patient/{patient_id}&_page={page}&_count={count}"
+                         f"&_sort=-lastUpdated"
+            )
             immunizations = response_immunization.json()
             if immunizations.get('total', 0) == 0:
                 logger.info(f"No Immunization found for patient: {patient_id}")
@@ -70,7 +74,10 @@ class HL7ImmunizationClient:
     @staticmethod
     def get_immunizations_by_id(patient_id: str , immunization_id: str):
         try:
-            response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization/{immunization_id}?patient=Patient/{patient_id}")
+            response_immunization = Immunization.make_request(
+                method="GET",
+                endpoint=f"/fhir/Immunization/{immunization_id}?patient=Patient/{patient_id}&_sort=-lastUpdated"
+            )
             immunizations = response_immunization.json()
             if response_immunization.status_code == 404:
                 logger.info(f"Immunization Not Found: {response_immunization}")
@@ -152,13 +159,15 @@ class HL7ImmunizationClient:
         if name:
             return HL7ImmunizationClient.get_by_vaccine_name(name, page, page_size)
         return HL7ImmunizationClient.get_all_immunizations(page, page_size)
-    
 
     @staticmethod
     def find_immunizations_by_patient_id(patient_id: str, name: str, page:int, count:int):
         try:
             result = {}
-            response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization?patient=Patient/{patient_id}&.vaccineCode.coding.0.display$contains={name}&_page={page}&_count={count}")
+            response_immunization = Immunization.make_request(
+                method="GET",
+                endpoint=f"/fhir/Immunization?patient=Patient/{patient_id}&.vaccineCode.coding.0.display$contains={name}"
+                         f"&_page={page}&_count={count}&_sort=-lastUpdated")
             immunizations = response_immunization.json()
             if immunizations.get('total', 0) == 0:
                 logger.info(f"No Immunization found for name: {name} and patient {patient_id}")
