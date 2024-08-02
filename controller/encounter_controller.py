@@ -86,7 +86,10 @@ class EncounterClient:
     def get_encounter_by_patient_id(patient_id: str, page: int, count: int):
         try:
             result = {}        
-            encounter = Encounter.make_request(method="GET", endpoint=f"/fhir/Encounter/?subject=Patient/{patient_id}&_page={page}&_count={count}")
+            encounter = Encounter.make_request(
+                method="GET",
+                endpoint=f"/fhir/Encounter/?subject=Patient/{patient_id}&_page={page}&_count={count}&_sort=-lastUpdated"
+            )
             encounter_data = encounter.json()
             result["data"] = encounter_data
             result["current_page"] = page

@@ -35,10 +35,10 @@ async def get_by_id(
 @permission_required("APPOINTMENT", "ALL_READ")
 async def get_appointment(
         request: Request,
-        patient_name: Optional[str] = None,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-        service_name: Optional[str] = None,
+        patient_name: Optional[str] = "",
+        start_date: Optional[str] = "",
+        end_date: Optional[str] = "",
+        service_name: Optional[str] = "",
         page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
     logger.info(f"fetching values")
     return AppointmentClient.get_appointment(patient_name, start_date, end_date, service_name, page, page_size)

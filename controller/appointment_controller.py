@@ -276,7 +276,8 @@ class AppointmentClient:
         try:
             appointment = Appointment.make_request(
                 method="GET",
-                endpoint=f"/fhir/Appointment/?.participant.0.actor.id={patient_id}&.comment={search}",
+                endpoint=f"/fhir/Appointment/?.participant.0.actor.id={patient_id}&.comment={search}"
+                         f"&_sort=-lastUpdated",
             )
             appointment_data = appointment.json()
             if appointment_data.get('total', 0) == 0:
@@ -321,7 +322,6 @@ class AppointmentClient:
                 content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             ) 
 
-
     @staticmethod
     def get_by_id(
         patient_id: str,
@@ -350,15 +350,19 @@ class AppointmentClient:
                 service_type_display = ', '.join([coding['display'] for coding in service_type_coding if 'display' in coding])
                 patient_result = {
                     "appointmentId": appointment_detail.get("id"),
+                    "reason_for_test": appointment_detail.get("patientInstruction"),
                     "patientId": patient_id_extracted,
                     "name": (patient_details.get('firstName', '') + " " + patient_details.get('lastName', '')).strip(),
                     "dob": patient_details.get('dob'),
                     "gender": patient_details.get("gender"),
+                    "email": patient_details.get("email"),
+                    "phoneNo": patient_details.get("phoneNo"),
+                    "alternativeNumber": patient_details.get("alternativeNumber"),
                     "appointmentFor": service_type_display,
                     'start': appointment_detail.get("start"),
                     'end': appointment_detail.get("end"),
                     "condition": extracted_conditions,
-                    "insurance" : insurance_detail
+                    "insurance": insurance_detail
                 }
                 result.append(patient_result)
                 final_response = {
@@ -380,7 +384,6 @@ class AppointmentClient:
             return JSONResponse(
                 content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )
-
 
     @staticmethod
     def get_by_patient_name(name: str, page: int, page_size: int):
@@ -489,23 +492,27 @@ class AppointmentClient:
                 status_code=status.HTTP_400_BAD_REQUEST
             )
 
-
     @staticmethod
-    def get_appointment(patient_name: str, start_date: str, end_date: str, service_name: str, page: int, page_size: int):
-        if patient_name:
-            return AppointmentClient.get_by_patient_name(patient_name, page, page_size)
-        elif start_date or end_date:
-            start_date = start_date if start_date else START_DATE
-            end_date = end_date if end_date else END_DATE
-            return AppointmentClient.get_appointment_by_date(start_date, end_date, page, page_size)
-        elif service_name:
-            return AppointmentClient.custom_query_with_pagination(
-                    "filteredAppointmentServiceType", service_name, page, page_size
-                )
-        else:
-            return AppointmentClient.get_appointment_detail(page, page_size)
+    def get_appointment(patient_name: str = "", start_date: str = "", end_date: str = "",
+                        service_name: str = "", page: int = 1, page_size: int = 100):
+        # if patient_name:
+        #     return AppointmentClient.get_by_patient_name(patient_name, page, page_size)
+        # elif start_date or end_date:
+        #     start_date = start_date if start_date else START_DATE
+        #     end_date = end_date if end_date else END_DATE
+        #     return AppointmentClient.get_appointment_by_date(start_date, end_date, page, page_size)
+        # elif service_name:
+        #     return AppointmentClient.custom_query_with_pagination(
+        #             "filteredAppointmentServiceType", service_name, page, page_size
+        #         )
+        # else:
+        #     return AppointmentClient.get_appointment_detail(page, page_size)
+        start_date = start_date if start_date else START_DATE
+        end_date = end_date if end_date else END_DATE
+        return AppointmentClient.custom_query_with_pagination(
+            "filteredAppointments", patient_name, start_date, end_date, service_name, page, page_size
+            )
 
-         
     @staticmethod
     def get_appointment_detail(page, page_size):
         results = []
@@ -561,7 +568,6 @@ class AppointmentClient:
             status_code=status.HTTP_200_OK
         )
 
-
     @staticmethod
     def formated_data(formatted_data: list):
         appointment_values = AppointmentClient.get_appointment_data(formatted_data)
@@ -605,12 +611,10 @@ class AppointmentClient:
 
         return results
 
-
     @staticmethod
     def get_patient_detail(patient_id):
         patient = PatientClient.get_patient_by_id(patient_id)
         return patient
-    
 
     @staticmethod
     def get_patient_id_and_service_type_from_appointment(appointment_value):
@@ -709,19 +713,20 @@ class AppointmentClient:
         
         return result
 
-
     @staticmethod
-    def custom_query_with_pagination(query_name: str, search: str, page: int, page_size: int):
+    def custom_query_with_pagination(query_name: str, patient_name, start_date, end_date, service_name, page, page_size):
         limit = page_size
         offset = (page - 1) * page_size
         response_name = AidboxApi.make_request(
             method="GET",
-            endpoint=f"/$query/{query_name}?display={search}&limit={limit}&offset={offset}"
+            endpoint=f"/$query/{query_name}?patientName={patient_name}&start_date={start_date}&end_date={end_date}"
+                     f"&service_name={service_name}&limit={limit}&offset={offset}"
         )
         data = response_name.json()
         count_res = AidboxApi.make_request(
             method="GET",
-            endpoint=f"/$query/{query_name}Count?display={search}"
+            endpoint=f"/$query/{query_name}Count?patientName={patient_name}&start_date={start_date}&end_date={end_date}"
+                     f"&service_name={service_name}"
         )
         count_resp = count_res.json()
         total_count = count_resp["data"][0]["count"]
@@ -747,7 +752,6 @@ class AppointmentClient:
         if not data.get('data', []):
             final_response = []
         return final_response
-    
 
     @staticmethod
     def update_appointment_status(appointment_id: str, update_status: StatusModel):
@@ -776,3 +780,4 @@ class AppointmentClient:
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
+
