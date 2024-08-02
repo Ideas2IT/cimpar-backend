@@ -2,16 +2,20 @@ import base64
 import json
 import logging
 import contextvars
+from datetime import datetime, timedelta
+
 import requests
 import os
 from functools import wraps
-from fastapi import HTTPException, Request
+
+from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
+from fastapi import Request
 from azure.communication.email import EmailClient
 from fastapi import HTTPException
 from typing import Type, TypeVar, Dict, Any
 
 from HL7v2 import get_md5
-
+from constants import FILE_SIZE, FILE_ETL_HOUR
 
 T = TypeVar('T')
 
@@ -20,7 +24,6 @@ logger = logging.getLogger("log")
 bearer_token = contextvars.ContextVar('bearer_token')
 user_id_context = contextvars.ContextVar('user_id')
 base = os.environ.get("AIDBOX_URL")
-
 
 AZURE_COMMUNICATION_CONNECTION_STRING = os.environ.get("AZURE_COMMUNICATION_CONNECTION_STRING")
 SENDER_EMAIL_ADDRESS = os.environ.get("SENDER_EMAIL_ADDRESS")
@@ -84,7 +87,7 @@ def has_permission(user_id: str, resource: str, action: str, auth_token: str):
     for privilege in privileges:
         if (privilege["uri"] == "*" or privilege["uri"].upper() == resource.upper()) and \
                 (action.lower() in privilege["action"] or "*" in privilege["action"]):
-            return True,  role_id
+            return True, role_id
     return False, role_id
 
 
@@ -112,7 +115,9 @@ def permission_required(resource: str, action: str):
                 if user_id != patient_id:
                     raise HTTPException(status_code=403, detail="Permission denied: Unauthorized Patient")
             return await func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -121,7 +126,7 @@ def send_email(recipient_email, body):
         email_client = EmailClient.from_connection_string(AZURE_COMMUNICATION_CONNECTION_STRING)
         message = {
             "senderAddress": SENDER_EMAIL_ADDRESS,
-            "recipients":  {
+            "recipients": {
                 "to": [{"address": recipient_email}],
             },
             "content": {
@@ -165,4 +170,45 @@ def paginate(model: Type[T], page: int = 1, page_size: int = 10) -> Dict[str, An
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
+def azure_file_handler(container_name, blob_name, blob_data=None, fetch=False, delete=False):
+    """
+    Upload a file to Azure Blob Storage.
+
+    Args:
+        container_name (str): The name of the container.
+        blob_name (str): The name of the blob.
+        blob_data : The data to be uploaded
+        fetch (bool): identifier whether to just fetch the URL of existing data
+        delete (bool): identifier
+    """
+    blob_service_client = BlobServiceClient.from_connection_string(os.environ.get("CONNECTION_STRING"))
+    container_client = blob_service_client.get_container_client(container_name)
+    blob_client = container_client.get_blob_client(blob_name)
+
+    if delete:
+        logger.info(f"Deleting the blob for URL: {blob_name}")
+        return blob_client.delete_blob()
+
+    sas_token = generate_blob_sas(
+        account_name=blob_service_client.account_name,
+        container_name=container_name,
+        blob_name=blob_name,
+        account_key=blob_service_client.credential.account_key,
+        permission=BlobSasPermissions(read=True),
+        expiry=datetime.utcnow() + timedelta(hours=FILE_ETL_HOUR)
+    )
+    if fetch:
+        logger.info(f"Fetching the blob for URL: {blob_name}")
+        return f"{blob_client.url}?{sas_token}" if blob_client.exists else False
+
+    logger.info(f"Creating/ Updating the blob for URL: {blob_name}")
+    blob_client.upload_blob(blob_data, overwrite=True)
+
+    return f"{blob_client.url}?{sas_token}"
+
+
+def validate_file_size(file_data):
+    logger.info('Validating the size of the file to be uploaded')
+    return False if round(len(file_data) / (1024 * 1024), 2) > FILE_SIZE else file_data
 

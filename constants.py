@@ -49,4 +49,7 @@ GENDER_MAPPING = {
     "F": "Female",
     "U": "Unknown and Not listed"
 }
-
+INSURANCE_CONTAINER = "cimparinsurancedatadev"
+FILE_SIZE = 5.00
+FILE_ETL_HOUR = 1
+DELETED = 'deleted'
