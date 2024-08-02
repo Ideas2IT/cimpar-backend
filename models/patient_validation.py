@@ -89,7 +89,7 @@ class PatientUpdateModel(BaseModel):
     middleName: Optional[str] = ""
     lastName: Optional[str] = ""
     gender: str
-    dob: int
+    dob: str
     phoneNo: Optional[str] = None
     alternativeNumber: Optional[str] = ""
     city: Optional[str] = None

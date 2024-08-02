@@ -66,8 +66,10 @@ class ObservationClient:
     def get_lab_result_by_name(patient_id: str, name: str, page: int, page_size: int):
         try:
             result = {}
-            lab_result = Observation.make_request(method="GET", 
-                endpoint=f"/fhir/Observation?subject=Patient/{patient_id}&.code.coding.0.display$contains={name}&_page={page}&_count={page_size}")
+            lab_result = Observation.make_request(
+                method="GET",
+                endpoint=f"/fhir/Observation?subject=Patient/{patient_id}&.code.coding.0.display$contains={name}"
+                         f"&_page={page}&_count={page_size}&_sort=-lastUpdated")
             lab_result_json = lab_result.json()
             result["data"] = lab_result_json
             result["current_page"] = page
@@ -85,17 +87,20 @@ class ObservationClient:
                 "error": "Unable to retrieve Lab Result",
                 "details": str(e),
             }
-            
             return JSONResponse(
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
-        
+
     @staticmethod
     def get_lab_result_by_patient_id(patient_id: str, page: int, page_size: int):
         try:
             result = {}
-            lab_result = Observation.make_request(method="GET", endpoint=f"/fhir/Observation?subject=Patient/{patient_id}&_page={page}&_count={page_size}")
+            lab_result = Observation.make_request(
+                method="GET",
+                endpoint=f"/fhir/Observation?subject=Patient/{patient_id}&_page={page}&_count={page_size}"
+                         f"&_sort=-lastUpdated"
+            )
             lab_result_json = lab_result.json()
             if lab_result_json.get('total', 0) == 0:
                 logger.info(f"No labtest found for patient: {patient_id}")
