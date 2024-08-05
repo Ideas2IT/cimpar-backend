@@ -4,6 +4,9 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime
 
+from constants import GENDER_MAPPING
+from controller.master_controller import MasterClient
+
 
 def validate_date_of_birth(timestamp):
     try:
@@ -67,6 +70,33 @@ class PatientModel(BaseModel):
     insuranceDetails: InsuranceDetail
     createAccount: bool
 
+    @field_validator('gender')
+    def validate_gender(cls, value):
+        if value in GENDER_MAPPING:
+            return GENDER_MAPPING[value]
+        raise ValueError(f"Invalid gender code")
+
+    @field_validator('ethnicity')
+    def validate_ethnicity(cls, value):
+        ethnicity_mapping = MasterClient.fetch_master_using_code('ethnicity', value)
+        if value == ethnicity_mapping["code"]:
+            return ethnicity_mapping["display"]
+        raise ValueError(f"Invalid ethnicity code")
+
+    @field_validator('race')
+    def validate_race(cls, value):
+        race_mapping = MasterClient.fetch_master_using_code('race', value)
+        if value == race_mapping["code"]:
+            return race_mapping["display"]
+        raise ValueError("Invalid race code")
+
+    @field_validator('state')
+    def validate_state(cls, value):
+        state_mapping = MasterClient.fetch_master_using_code('state', value)
+        if value == state_mapping["code"]:
+            return state_mapping["display"]
+        raise ValueError("Invalid state code")
+
     @field_validator('firstName', 'middleName', 'lastName', 'gender', 'city', 'state', 'country')
     def validate_name(cls, value):
         return validate_name(value)
@@ -103,6 +133,33 @@ class PatientUpdateModel(BaseModel):
     height: Optional[str] = None
     weight: Optional[str] = None
 
+    @field_validator('gender')
+    def validate_gender(cls, value):
+        if value in GENDER_MAPPING:
+            return GENDER_MAPPING[value]
+        raise ValueError("Invalid gender code")
+
+    @field_validator('ethnicity')
+    def validate_ethnicity(cls, value):
+        ethnicity_mapping = MasterClient.fetch_master_using_code('ethnicity', value)
+        if value == ethnicity_mapping["code"]:
+            return ethnicity_mapping["display"]
+        raise ValueError(f"Invalid ethnicity code")
+
+    @field_validator('race')
+    def validate_race(cls, value):
+        race_mapping = MasterClient.fetch_master_using_code('race', value)
+        if value == race_mapping["code"]:
+            return race_mapping["display"]
+        raise ValueError("Invalid race code")
+
+    @field_validator('state')
+    def validate_state(cls, value):
+        state_mapping = MasterClient.fetch_master_using_code('state', value)
+        if value == state_mapping["code"]:
+            return state_mapping["display"]
+        raise ValueError("Invalid state code")
+
     @field_validator('firstName', 'middleName', 'lastName', 'gender', 'city', 'state', 'country')
     def validate_name(cls, value):
         return validate_name(value)
@@ -118,3 +175,4 @@ class PatientUpdateModel(BaseModel):
     @field_validator('phoneNo')
     def validate_phone_number(cls, value):
         return validate_phone_number(value)
+
