@@ -1,6 +1,6 @@
 from typing import Optional, Union
 from aidbox.resource.servicerequest import ServiceRequest
-from aidbox.resource.observation import Observation
+from aidbox.resource.observation import Observation, Observation_ReferenceRange
 from aidbox.resource.patient import Patient
 from aidbox.resource.organization import Organization
 from aidbox.resource.practitionerrole import PractitionerRole
@@ -90,6 +90,8 @@ def prepare_observation(
         category=[CodeableConcept(coding=[get_category(data)])],
     )
 
+    max_length = 0
+
     if parent:
         resourceType = parent.__class__.__name__
         observation.hasMember = [
@@ -118,10 +120,12 @@ def prepare_observation(
     if "string" in data.get("value", {}):
         observation.valueString = " ".join(data["value"]["string"])
 
-    if "unit" in data.get("value", {}):
-        observation.valueQuantity = Quantity(
-            value=data["value"]["TX"], unit=data["value"]["code"]
-        )
+    if "value" in data.get("value", {}) or "units" in data.get("value", {}):
+        if "value" in data["value"] and "number" in data["value"]:
+            observation.valueQuantity = Quantity(
+                value = float(data["value"]["number"][0]) if "number" in data["value"] and isinstance(data["value"]["number"], list) and len(data["value"]["number"]) > 0 else 0,
+                unit = data["value"]["units"]["code"] if "units" in data["value"] and "code" in data["value"]["units"] else None
+            )
 
     if "ED" in data.get("value", {}):
         observation.extension = list(map(lambda attachment_data: Extension(
@@ -162,6 +166,20 @@ def prepare_observation(
         observation.performer.append(Reference(reference="Organization/" + organization.id))
 
         organizations.append(organization)
+    
+    if "referenceRange" in data and "range" in data["referenceRange"]:
+        observation.referenceRange = [Observation_ReferenceRange(
+            text=data["referenceRange"]["range"]
+        )]
+
+    if "interpretation" in data and "flag" in data["interpretation"]:
+        max_length = max(max_length, len(data["interpretation"]["flag"]))
+        flags = data["interpretation"]["flag"]
+        if not isinstance(flags, list):
+            flags = [flags]         
+        observation.interpretation = [
+            CodeableConcept(coding=[Coding(code=flag, system="http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation") for flag in flags])
+        ]
 
     if "access_checks" in data:
         observation.note = [Annotation(text=data["access_checks"])]
