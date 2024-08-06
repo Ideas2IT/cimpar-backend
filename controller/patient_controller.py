@@ -1,3 +1,4 @@
+import json
 import logging
 import traceback
 from fastapi import Response, status, HTTPException
@@ -57,14 +58,10 @@ class PatientClient:
                 if pat.haveInsurance:
                     coverage_values = CoverageClient.create_coverage(pat, patient_id_update, from_patient=True)
                     if coverage_values:
-                        if coverage_values.get('is_primary_insurance'):
-                            result_data['is_primary_insurance'] = coverage_values.get('is_primary_insurance')
-                        if coverage_values.get('is_secondary_insurance'):
-                            result_data['is_secondary_insurance'] = coverage_values.get('is_secondary_insurance')
-                        if coverage_values.get('is_primary_coverage_exist'):
-                            result_data['is_primary_coverage_exist'] = coverage_values.get('is_primary_coverage_exist')
-                        if coverage_values.get('is_secondary_coverage_exist'):
-                            result_data['is_secondary_coverage_exist'] = coverage_values.get('is_secondary_coverage_exist')
+                        if coverage_values.get('primary_id'):
+                            result_data['primary_insurance_id'] = coverage_values.get('is_primary_insurance')
+                        if coverage_values.get('secondary_id'):
+                            result_data['secondary_insurance_id'] = coverage_values.get('is_secondary_insurance')
                 result_data["Updated"] = patient_update.get("Updated")
                 #if (not user_json) or (user_json and getattr(user_json[0], "inactive", False)):
                 if pat.createAccount and not User.get({"id": patient_id_update}):

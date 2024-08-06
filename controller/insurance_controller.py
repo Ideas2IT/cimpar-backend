@@ -31,22 +31,22 @@ class CoverageClient:
                     return JSONResponse(
                         content="A patient can only have 3 insurance", status_code=status.HTTP_400_BAD_REQUEST
                     )
+                insurance_id = CoverageClient.get_insurance_ids(existing_coverages)
+                result["primary_id"] = insurance_id.get("primary_id", "")
+                result["secondary_id"] = insurance_id.get("secondary_id", "")
+                for id, insurance_id in insurance_id.items():
+                    if insurance_id is not None:
+                        insurance_value = CoverageClient.delete_by_insurance_id(insurance_id, patient_id, from_patient)
+                    logger.info(f"Coverage Not Found: {patient_id} and {insurance_value}")
                 if existing_coverages:
-                    primary_coverage_result = CoverageClient.get_primary_coverage(existing_coverages, patient_id)
-                    secondary_coverage_result = CoverageClient.get_secondary_coverage(existing_coverages, patient_id)
-                    if primary_coverage_result.get('is_primary_insurance_exist') is True:
-                        result["is_primary_coverage_exist"] = True
-                    if primary_coverage_result.get('is_primary_insurance_exist') is False:
                         primary_insurance_plan = CoverageClient.create_primary_insurance(primary_insurance, coverage, patient_id)
                         primary_insurance_plan.save()
                         result["is_primary_insurance"] = primary_insurance_plan.id
-                    if secondary_coverage_result.get('is_secondary_insurance_exist') is True:
-                        result["is_secondary_coverage_exist"] = True
-                    if secondary_coverage_result.get('is_secondary_insurance_exist') is False and coverage.haveSecondaryInsurance:
-                        secondary_insurance_plan = CoverageClient.create_secondary_insurance(secondary_insurance, coverage, patient_id)
-                        secondary_insurance_plan.save()
-                        result["is_secondary_insurance"] = secondary_insurance_plan.id
-                        result["created"] = True
+                        if coverage.haveSecondaryInsurance:
+                            secondary_insurance_plan = CoverageClient.create_secondary_insurance(secondary_insurance, coverage, patient_id)
+                            secondary_insurance_plan.save()
+                            result["is_secondary_insurance"] = secondary_insurance_plan.id
+                            result["created"] = True
             return result
         except Exception as e:
             logger.error(f"Unable to create a insurance_plan: {str(e)}")
@@ -247,9 +247,10 @@ class CoverageClient:
             )
 
     @staticmethod
-    def delete_by_insurance_id(insurance_id: str, patient_id: str):
+    def delete_by_insurance_id(insurance_id: str, patient_id: str, from_patient=False):
         try:
-            response_coverage = Coverage.make_request(method="GET", endpoint=f"/fhir/Coverage/{insurance_id}?beneficiary=Patient/{patient_id}")
+            insurance = CoverageWrapper if from_patient else Coverage
+            response_coverage = insurance.make_request(method="GET", endpoint=f"/fhir/Coverage/{insurance_id}?beneficiary=Patient/{patient_id}")
             existing_coverage = response_coverage.json() if response_coverage else {}
             if response_coverage.status_code == 404:
                 logger.info(f"Coverage Not Found: {patient_id}")
@@ -259,7 +260,7 @@ class CoverageClient:
                 )
 
             if existing_coverage.get("id") == insurance_id and existing_coverage.get("beneficiary", {}).get("reference") == f"Patient/{patient_id}":
-                delete_data = Coverage(**existing_coverage)
+                delete_data = insurance(**existing_coverage)
                 delete_data.delete()
                 return {"deleted": True, "patient_id": patient_id}
             error_response_data = { 
@@ -435,3 +436,25 @@ class CoverageClient:
         patient_result["insurance"] = "No" if total_coverage == 0 else "Yes"
         patient_result["coverage_details"] = coverages
         return patient_result
+    
+    @staticmethod
+    def get_insurance_ids(response_json):
+        insurance_ids = {
+            "primary_id": None,
+            "secondary_id": None,
+            "tertiary_id": None
+        }
+        if response_json.get('total', 0) == 0:
+            logger.info(f"No Coverage found for patient")
+            return {}
+        for entry in response_json.get("entry", []):
+            resource = entry.get("resource", {})
+            coverage_class = resource.get("class", [])
+            
+            for cls in coverage_class:
+                class_value = cls.get("value", "").lower()
+                if class_value == "primary":
+                    insurance_ids["primary_id"] = resource.get("id")
+                elif class_value == "secondary":
+                    insurance_ids["secondary_id"] = resource.get("id")
+        return insurance_ids
