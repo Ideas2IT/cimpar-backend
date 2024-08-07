@@ -62,12 +62,12 @@ class PatientModel(BaseModel):
     height: Optional[str] = None
     weight: Optional[str] = None
     haveInsurance: bool
-    isPrimaryMember: bool
+    isPrimaryMember: Optional[bool] = None
     primaryMemberName: Optional[str] = None
     primaryMemberDob: Optional[datetime] = None
-    haveSecondaryInsurance: bool
-    secondaryInsuranceDetails: InsuranceDetail
-    insuranceDetails: InsuranceDetail
+    haveSecondaryInsurance: Optional[bool] = None
+    secondaryInsuranceDetails: Optional[InsuranceDetail] = None
+    insuranceDetails: Optional[InsuranceDetail] = None
     createAccount: bool
 
     @field_validator('gender')
