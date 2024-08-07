@@ -47,7 +47,8 @@ UPCOMING_APPOINTMENT = "upcoming appointment"
 GENDER_MAPPING = {
     "M": "Male",
     "F": "Female",
-    "U": "Unknown and Not listed"
+    "U": "Unknown",
+    "O" : "Other"
 }
 INSURANCE_CONTAINER = "cimparinsurancedatadev"
 FILE_SIZE = 5.00
