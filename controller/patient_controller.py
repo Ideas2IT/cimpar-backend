@@ -101,7 +101,7 @@ class PatientClient:
                     Address(
                         city=pat.city,
                         postalCode=pat.zipCode,
-                        text=pat.address,
+                        line=[pat.address],
                         state=pat.state,
                         country=pat.country,
                     )
@@ -265,7 +265,7 @@ class PatientClient:
                     Address(
                         city=pat.city,
                         postalCode=pat.zipCode,
-                        text=pat.address,
+                        line=[pat.address],
                         state=pat.state,
                         country=pat.country,
                     )
@@ -385,7 +385,7 @@ class PatientClient:
 
         # Extract address components
         if patient.address:
-            extracted_data["address"] = patient.address[0].text
+            extracted_data["address"] = patient.address[0].line[0] 
             extracted_data["zipCode"] = patient.address[0].postalCode
             extracted_data["city"] = patient.address[0].city
             extracted_data["country"] = patient.address[0].country
