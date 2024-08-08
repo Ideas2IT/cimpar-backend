@@ -240,6 +240,7 @@ class CoverageClient:
                         content={"error": "No Matching Record"},
                         status_code=status.HTTP_404_NOT_FOUND
                     )
+                primary_coverage_result, secondary_coverage_result, tertiary_coverage_result = {}, {}, {}
                 if coverages:
                     primary_coverage_result = CoverageClient.get_primary_coverage(coverages, patient_id)
                     secondary_coverage_result = CoverageClient.get_secondary_coverage(coverages, patient_id)
