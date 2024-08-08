@@ -1,9 +1,12 @@
 import logging
-from fastapi import APIRouter, Request, Query
+from typing import Optional
+from fastapi import APIRouter, Request, Query, Form, UploadFile, File, status
+
+from starlette.responses import JSONResponse
 
 from models.encounter_validation import EncounterModel, EncounterUpdateModel
 from controller.encounter_controller import EncounterClient
-from utils.common_utils import permission_required
+from utils.common_utils import permission_required, validate_file_size
 
 
 router = APIRouter()
@@ -12,12 +15,43 @@ logger = logging.getLogger("log")
 
 @router.post("/encounter/{patient_id}")
 @permission_required("ENCOUNTER", "CREATE")
-async def create_encounter(encounter: EncounterModel, patient_id, request: Request):
+async def create_encounter(
+    request: Request,
+    patient_id: str,
+    location: str = Form(...),
+    phone_number: str = Form(...),
+    admission_date: str = Form(...),
+    discharge_date: str = Form(...),
+    reason: str = Form(...),
+    primary_care_team: str = Form(...),
+    treatment_summary: str = Form(...),
+    follow_up_care: str = Form(...),
+    activity_notes: str = Form(...), 
+    file: Optional[UploadFile] = File(None, description="Optional file upload")
+    ):
+    # Create EncounterModel instance from form data
+    encounter = EncounterModel(
+        location=location,
+        phone_number=phone_number,
+        admission_date=admission_date,
+        discharge_date=discharge_date,
+        reason=reason,
+        primary_care_team=primary_care_team,
+        treatment_summary=treatment_summary,
+        follow_up_care=follow_up_care,
+        activity_notes=activity_notes
+    )
     logger.info(f"Request Payload: {encounter}")
-    response = EncounterClient.create_encounter(encounter, patient_id)
+    file_data = None
+    if file:
+        file_data = await file.read() if file else None
+        if not validate_file_size(file_data):
+            return JSONResponse(
+                content="File size should be less than 5 MB", status_code=status.HTTP_400_BAD_REQUEST
+            )
+    response = EncounterClient.create_encounter(encounter, patient_id, file_data)
     logger.info(f"Response Payload: {response}")
     return response
-
 
 @router.get("/encounter/{patient_id}")
 @permission_required("ENCOUNTER", "READ")
@@ -47,9 +81,41 @@ async def get_all_encounters(request: Request, page: int = Query(1, ge=1), page_
 
 @router.put("/encounter/{patient_id}/{encounter_id}")
 @permission_required("ENCOUNTER", "UPDATE")
-async def update_encounter(patient_id: str, encounter_id: str, encounter: EncounterUpdateModel, request: Request):
+async def update_encounter(
+    patient_id: str, 
+    encounter_id: str, 
+    request: Request,
+    location: str = Form(...),
+    phone_number: str = Form(...),
+    admission_date: str = Form(...),
+    discharge_date: str = Form(...),
+    reason: str = Form(...),
+    primary_care_team: str = Form(...),
+    treatment_summary: str = Form(...),
+    follow_up_care: str = Form(...),
+    activity_notes: str = Form(...), 
+    file: Optional[UploadFile] = File(None, description="Optional file upload"),
+    ):
+    # Create EncounterModel instance from form data
+    encounter = EncounterUpdateModel(
+        location=location,
+        phone_number=phone_number,
+        admission_date=admission_date,
+        discharge_date=discharge_date,
+        reason=reason,
+        primary_care_team=primary_care_team,
+        treatment_summary=treatment_summary,
+        follow_up_care=follow_up_care,
+        activity_notes=activity_notes
+    )
+    if file:
+        file_data = await file.read() if file else None
+        if not validate_file_size(file_data):
+            return JSONResponse(
+                content="File size should be less than 5 MB", status_code=status.HTTP_400_BAD_REQUEST
+            )
     logger.info(f"Updating encounter ID:{patient_id}")
-    return EncounterClient.update_by_patient_id(patient_id, encounter_id, encounter)
+    return EncounterClient.update_by_patient_id(patient_id, encounter_id, encounter, file)
 
 
 @router.delete("/encounter/{patient_id}/{encounter_id}")
