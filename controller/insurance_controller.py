@@ -35,8 +35,6 @@ class CoverageClient:
                         content="A patient can only have 3 insurance", status_code=status.HTTP_400_BAD_REQUEST
                     )
                 insurance_id = CoverageClient.get_insurance_ids(existing_coverages)
-                result["primary_id"] = insurance_id.get("primary_id", "")
-                result["secondary_id"] = insurance_id.get("secondary_id", "")
                 for id, insurance_id in insurance_id.items():
                     if insurance_id is not None:
                         insurance_value = CoverageClient.delete_by_insurance_id(insurance_id, patient_id, from_patient)
