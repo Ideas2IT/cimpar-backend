@@ -200,7 +200,11 @@ def azure_file_handler(container_name, blob_name, blob_data=None, fetch=False, d
     )
     if fetch:
         logger.info(f"Fetching the blob for URL: {blob_name}")
-        return f"{blob_client.url}?{sas_token}" if blob_client.exists else False
+        if blob_client.exists():
+            return f"{blob_client.url}?{sas_token}"
+        else:
+            return False
+        # return f"{blob_client.url}?{sas_token}" if blob_client.exists else False
 
     logger.info(f"Creating/ Updating the blob for URL: {blob_name}")
     blob_client.upload_blob(blob_data, overwrite=True)
