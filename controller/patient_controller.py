@@ -58,9 +58,9 @@ class PatientClient:
                 if pat.haveInsurance:
                     coverage_values = CoverageClient.create_coverage(pat, patient_id_update, from_patient=True)
                     if coverage_values:
-                        if coverage_values.get('primary_id'):
+                        if coverage_values.get('is_primary_insurance'):
                             result_data['primary_insurance_id'] = coverage_values.get('is_primary_insurance')
-                        if coverage_values.get('secondary_id'):
+                        if coverage_values.get('is_secondary_insurance'):
                             result_data['secondary_insurance_id'] = coverage_values.get('is_secondary_insurance')
                 result_data["Updated"] = patient_update.get("Updated")
                 #if (not user_json) or (user_json and getattr(user_json[0], "inactive", False)):
