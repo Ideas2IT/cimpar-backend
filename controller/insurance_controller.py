@@ -56,7 +56,7 @@ class CoverageClient:
             )
 
     @staticmethod
-    def create_coverage_insurance(ins_plan: CoverageModel, patient_id: str, upload_file):
+    def create_coverage_insurance(ins_plan: CoverageModel, patient_id: str, upload_file, file_extension: str = None):
         try:
             result = {'file_url': None}
             response_coverage = Coverage.make_request(method="GET",
@@ -99,7 +99,7 @@ class CoverageClient:
             result["created"] = True
             if upload_file and (result.get("is_primary_insurance") or result.get("is_secondary_insurance") or
                                 result.get("is_tertiary_insurance")):
-                file_path_name = f'{patient_id}/{result.get("is_primary_insurance") or result.get("is_secondary_insurance") or result.get("is_tertiary_insurance")}'
+                file_path_name = f'{patient_id}/{result.get("is_primary_insurance") or result.get("is_secondary_insurance") or result.get("is_tertiary_insurance")}{file_extension}'
                 logger.info(f'Inserting blob data for path: {file_path_name}')
                 blob_url = azure_file_handler(container_name=INSURANCE_CONTAINER,
                                               blob_name=file_path_name,
@@ -137,11 +137,6 @@ class CoverageClient:
                 file_url = azure_file_handler(container_name=INSURANCE_CONTAINER,
                                               blob_name=f"{patient_id}/{insurance['resource']['id']}",
                                               fetch=True)
-                if not file_url:
-                    return JSONResponse(
-                        content={"error": "No matching file data found"},
-                        status_code=status.HTTP_404_NOT_FOUND
-                    )
                 insurance['resource']['file_url'] = file_url
             return {"coverage": coverage}
         except Exception as e:
@@ -196,7 +191,8 @@ class CoverageClient:
             )
         
     @staticmethod
-    def update_by_insurance_id(patient_id: str, updated_coverage: CoverageModel, insurance_id: str, upload_file):
+    def update_by_insurance_id(patient_id: str, updated_coverage: CoverageModel, insurance_id: str, upload_file,
+                               file_extension: str = None):
         try:
             result = {'file_url': ''}
             if patient_id and insurance_id:
@@ -263,7 +259,7 @@ class CoverageClient:
                     "secondary_insurance_id") or result.get("tertiary_insurance_id")
             if upload_file and blob_insurance_id:
                 logger.info(f"Cresting/Updating blob data for URL: {patient_id}/{blob_insurance_id}")
-                file_path_name = f'{patient_id}/{blob_insurance_id}'
+                file_path_name = f'{patient_id}/{blob_insurance_id}{file_extension}'
                 upload_url = azure_file_handler(container_name=INSURANCE_CONTAINER,
                                                 blob_name=file_path_name,
                                                 blob_data=upload_file)
