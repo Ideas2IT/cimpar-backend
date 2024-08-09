@@ -3,22 +3,35 @@ import traceback
 from fastapi import status
 from fastapi.responses import JSONResponse
 
-from aidbox.base import Period,  CodeableConcept, Reference, Coding, CodeableConcept
+from aidbox.base import Period, CodeableConcept, Reference, Coding, CodeableConcept
 from aidbox.resource.encounter import Encounter_Participant, Encounter_Location, Encounter_Hospitalization
 
-from constants import PATIENT_REFERENCE, CLASS_DISPLAY, ENCOUNTER_TYPE_SYSTEM, ENCOUNTER_TYPE_CODE, TREATMENT_SUMMARY_SYSTEM, TREATMENT_SUMMARY_CODE, ENCOUNTER_STATUS, CLASS_CODE
+from constants import (
+    PATIENT_REFERENCE,
+    CLASS_DISPLAY,
+    ENCOUNTER_TYPE_SYSTEM,
+    ENCOUNTER_TYPE_CODE,
+    TREATMENT_SUMMARY_SYSTEM,
+    TREATMENT_SUMMARY_CODE,
+    ENCOUNTER_STATUS,
+    CLASS_CODE,
+    VISIT_HISTORY_CONTAINER,
+    DELETED
+)
 from models.encounter_validation import EncounterModel, EncounterUpdateModel
-from services.aidbox_resource_wrapper import Encounter 
+from services.aidbox_resource_wrapper import Encounter
 from utils.common_utils import paginate
 
+from utils.common_utils import azure_file_handler
 
 logger = logging.getLogger("log")
 
 
 class EncounterClient:
     @staticmethod
-    def create_encounter(enc: EncounterModel, patient_id):
+    def create_encounter(enc: EncounterModel, patient_id, upload_file):
         try:
+            result = {}
             encounter = Encounter(
                 status=ENCOUNTER_STATUS,
                 class_=Coding(code=CLASS_CODE, display=CLASS_DISPLAY),
@@ -37,19 +50,19 @@ class EncounterClient:
                 period=Period(start=enc.admission_date, end=enc.discharge_date),
                 subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 reasonCode=[CodeableConcept(text=enc.reason)],
-                participant=[Encounter_Participant(individual=Reference(display=enc.primary_care_team))], 
+                participant=[Encounter_Participant(individual=Reference(display=enc.primary_care_team))],
                 location=[Encounter_Location(location=Reference(display=enc.phone_number))],
                 serviceProvider=Reference(display=enc.location),
                 serviceType=CodeableConcept(
-                        coding=[
-                            Coding(
-                                system=ENCOUNTER_TYPE_SYSTEM,
-                                code=ENCOUNTER_TYPE_CODE,
-                                display=enc.activity_notes,
-                            )
-                        ],
-                        text=enc.activity_notes,
-                    ),
+                    coding=[
+                        Coding(
+                            system=ENCOUNTER_TYPE_SYSTEM,
+                            code=ENCOUNTER_TYPE_CODE,
+                            display=enc.activity_notes,
+                        )
+                    ],
+                    text=enc.activity_notes,
+                ),
                 hospitalization=Encounter_Hospitalization(
                     specialCourtesy=[
                         CodeableConcept(
@@ -66,9 +79,17 @@ class EncounterClient:
                 )
             )
             encounter.save()
-            response_data = {"id": encounter.id, "created": True}
-            logger.info(f"Added Successfully in DB: {response_data}")
-            return response_data
+            result["id"] = encounter.id
+            if upload_file and encounter.id:
+                file_path_name = f'{patient_id}/{encounter.id}'
+                logger.info(f'Inserting blob data for path: {file_path_name}')
+                blob_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
+                                              blob_name=file_path_name,
+                                              blob_data=upload_file)
+                result["file_url"] = blob_url
+            result["created"] = True
+            logger.info(f"Added Successfully in DB: {result}")
+            return result
         except Exception as e:
             logger.error(f"Error creating visit history {str(e)}")
             logger.error(traceback.format_exc())
@@ -85,23 +106,30 @@ class EncounterClient:
     @staticmethod
     def get_encounter_by_patient_id(patient_id: str, page: int, count: int):
         try:
-            result = {}        
+            result = {}
             encounter = Encounter.make_request(
                 method="GET",
                 endpoint=f"/fhir/Encounter/?subject=Patient/{patient_id}&_page={page}&_count={count}&_sort=-lastUpdated"
             )
             encounter_data = encounter.json()
-            result["data"] = encounter_data
-            result["current_page"] = page
-            result["page_size"] = count
-            result["total_items"] = encounter_data.get('total', 0)
-            result["total_pages"] = (int(encounter_data["total"]) + count - 1) // count
             if encounter_data.get('total', 0) == 0:
                 logger.info(f"No encounters found for patient: {patient_id}")
                 return JSONResponse(
                     content=[],
                     status_code=status.HTTP_200_OK
                 )
+            for encounter_values in encounter_data['entry']:
+                logger.info(f"identifying blob data for URL: {patient_id}/{encounter_values['resource']['id']}")
+                file_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
+                                              blob_name=f"{patient_id}/{encounter_values['resource']['id']}",
+                                              fetch=True)
+                if file_url:
+                    encounter_values['resource']['file_url'] = file_url
+            result["data"] = encounter_data
+            result["current_page"] = page
+            result["page_size"] = count
+            result["total_items"] = encounter_data.get('total', 0)
+            result["total_pages"] = (int(encounter_data["total"]) + count - 1) // count
             return result
         except Exception as e:
             logger.error(f"Error retrieving encounters: {str(e)}")
@@ -115,11 +143,12 @@ class EncounterClient:
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
-        
+
     @staticmethod
     def get_encounter_by_id(patient_id: str, encounter_id: str):
         try:
-            encounter = Encounter.make_request(method="GET", endpoint=f"/fhir/Encounter/{encounter_id}?subject=Patient/{patient_id}")
+            encounter = Encounter.make_request(method="GET",
+                                               endpoint=f"/fhir/Encounter/{encounter_id}?subject=Patient/{patient_id}")
             if encounter.status_code == 404:
                 logger.info(f"Encounter Not Found: {encounter_id}")
                 return JSONResponse(
@@ -127,8 +156,15 @@ class EncounterClient:
                     status_code=status.HTTP_404_NOT_FOUND
                 )
             encounter_json = encounter.json()
+            if 'id' in encounter_json and encounter_json['id'] != DELETED:
+                logger.info(f"identifying blob data for URL: {patient_id}/{encounter_id}")
+                file_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
+                                              blob_name=f"{patient_id}/{encounter_id}",
+                                              fetch=True)
+                if file_url:
+                    encounter_json['file_url'] = file_url
             return encounter_json
-            
+
         except Exception as e:
             logger.error(f"Error retrieving encounters: {str(e)}")
             logger.error(traceback.format_exc())
@@ -141,18 +177,20 @@ class EncounterClient:
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
-        
+
     @staticmethod
-    def update_by_patient_id(patient_id: str, encounter_id: str, enc: EncounterUpdateModel):
+    def update_by_patient_id(patient_id: str, encounter_id: str, enc: EncounterUpdateModel, upload_file):
         try:
-            response = Encounter.make_request(method="GET", endpoint=f"/fhir/Encounter/{encounter_id}?subject=Patient/{patient_id}")
+            result = {}
+            response = Encounter.make_request(method="GET",
+                                              endpoint=f"/fhir/Encounter/{encounter_id}?subject=Patient/{patient_id}")
             existing_encounter = response.json()
             if response.status_code == 404:
                 logger.info(f"Encounter Not Found: {encounter_id}")
                 return JSONResponse(
                     content={"error": "Patient you have provided was not matched with visit history"},
                     status_code=status.HTTP_404_NOT_FOUND
-                ) 
+                )
             if existing_encounter.get("subject", {}).get("reference") == f"Patient/{patient_id}":
                 encounter = Encounter(
                     id=encounter_id,
@@ -173,19 +211,19 @@ class EncounterClient:
                     period=Period(start=enc.admission_date, end=enc.discharge_date),
                     subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                     reasonCode=[CodeableConcept(text=enc.reason)],
-                    participant=[Encounter_Participant(individual=Reference(display=enc.primary_care_team))], 
+                    participant=[Encounter_Participant(individual=Reference(display=enc.primary_care_team))],
                     location=[Encounter_Location(location=Reference(display=enc.phone_number))],
                     serviceProvider=Reference(display=enc.location),
                     serviceType=CodeableConcept(
-                            coding=[
-                                Coding(
-                                    system=ENCOUNTER_TYPE_SYSTEM,
-                                    code=ENCOUNTER_TYPE_CODE,
-                                    display=enc.activity_notes,
-                                )
-                            ],
-                            text=enc.activity_notes,
-                        ),
+                        coding=[
+                            Coding(
+                                system=ENCOUNTER_TYPE_SYSTEM,
+                                code=ENCOUNTER_TYPE_CODE,
+                                display=enc.activity_notes,
+                            )
+                        ],
+                        text=enc.activity_notes,
+                    ),
                     hospitalization=Encounter_Hospitalization(
                         specialCourtesy=[
                             CodeableConcept(
@@ -202,14 +240,21 @@ class EncounterClient:
                     )
                 )
                 encounter.save()
-                logger.info(f"Updated Successfully in DB: {patient_id}")
-                return {"updated": True, "encounter": encounter.id}    
-
+                result["encounter"] = encounter.id
+                if upload_file and encounter.id:
+                    logger.info(f"Cresting/Updating blob data for URL: {patient_id}/{encounter.id}")
+                    file_path_name = f'{patient_id}/{encounter.id}'
+                    upload_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
+                                                    blob_name=file_path_name,
+                                                    blob_data=upload_file)
+                    result["file_url"] = upload_url
+                    logger.info(f"Updated Successfully in DB: {patient_id}")
+                result["updated"] = True
+                return result
             return JSONResponse(
-            content={"error": "patient_id you have provided was not matched with visit history"},
-            status_code=status.HTTP_404_NOT_FOUND
-        ) 
-            
+                content={"error": "patient_id you have provided was not matched with visit history"},
+                status_code=status.HTTP_404_NOT_FOUND
+            )
         except Exception as e:
             logger.error(f"Unable to update encounter: {str(e)}")
             logger.error(traceback.format_exc())
@@ -222,7 +267,7 @@ class EncounterClient:
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
-    
+
     @staticmethod
     def get_all_encounters(page, page_size):
         try:
@@ -231,10 +276,10 @@ class EncounterClient:
                 return JSONResponse(
                     content=[],
                     status_code=status.HTTP_200_OK
-                ) 
+                )
             logger.info(f"Encounters Found {len(encounters)}")
             return JSONResponse(
-                content=encounters, 
+                content=encounters,
                 status_code=status.HTTP_200_OK
             )
         except Exception as e:
@@ -253,7 +298,8 @@ class EncounterClient:
     @staticmethod
     def delete_by_encounter_id(patient_id: str, encounter_id: str):
         try:
-            encounter = Encounter.make_request(method="GET", endpoint=f"/fhir/Encounter/{encounter_id}?subject=Patient/{patient_id}")
+            encounter = Encounter.make_request(method="GET",
+                                               endpoint=f"/fhir/Encounter/{encounter_id}?subject=Patient/{patient_id}")
             existing_encounter = encounter.json()
             if encounter.status_code == 404:
                 logger.info(f"Encounter Not Found: {encounter_id}")
@@ -261,16 +307,26 @@ class EncounterClient:
                     content={"error": "Patient provided was not matched with visit history"},
                     status_code=status.HTTP_404_NOT_FOUND
                 )
-            if existing_encounter.get("subject", {}).get("reference") == f"Patient/{patient_id}" and existing_encounter.get('id') == encounter_id:
+            if existing_encounter.get("subject", {}).get(
+                    "reference") == f"Patient/{patient_id}" and existing_encounter.get('id') == encounter_id:
                 existing_encounter['class_'] = existing_encounter.pop('class')
                 delete_data = Encounter(**existing_encounter)
                 delete_data.delete()
-                return {"deleted": True, "encounter": encounter_id}
+                if 'id' in existing_encounter and existing_encounter['id'] != DELETED:
+                    logger.info(f"identifying blob data for URL: {patient_id}/{encounter_id}")
+                    file_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
+                                                  blob_name=f"{patient_id}/{encounter_id}",
+                                                  fetch=True)
+                    if file_url:
+                        azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
+                                           blob_name=f"{patient_id}/{encounter_id}",
+                                           delete=True)
+                return {"encounter": encounter_id, "deleted": True}
             return JSONResponse(
-            content={"error": "patient provided was not matched with visit history"},
-            status_code=status.HTTP_404_NOT_FOUND
+                content={"error": "patient provided was not matched with visit history"},
+                status_code=status.HTTP_404_NOT_FOUND
             )
-    
+
         except Exception as e:
             logger.error(f"Unable to delete encounter: {str(e)}")
             logger.error(traceback.format_exc())
@@ -278,7 +334,7 @@ class EncounterClient:
                 "error": "Unable to delete visit history",
                 "details": str(e),
             }
-    
+
             return JSONResponse(
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
