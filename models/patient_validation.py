@@ -79,21 +79,21 @@ class PatientModel(BaseModel):
     @field_validator('ethnicity')
     def validate_ethnicity(cls, value):
         ethnicity_mapping = MasterClient.fetch_master_using_code('ethnicity', value)
-        if value == ethnicity_mapping["code"]:
+        if ethnicity_mapping and value == ethnicity_mapping["code"]:
             return ethnicity_mapping["display"]
         raise ValueError(f"Invalid ethnicity code")
 
     @field_validator('race')
     def validate_race(cls, value):
         race_mapping = MasterClient.fetch_master_using_code('race', value)
-        if value == race_mapping["code"]:
+        if race_mapping and value == race_mapping["code"]:
             return race_mapping["display"]
         raise ValueError("Invalid race code")
 
     @field_validator('state')
     def validate_state(cls, value):
         state_mapping = MasterClient.fetch_master_using_code('state', value)
-        if value == state_mapping["code"]:
+        if state_mapping and value == state_mapping["code"]:
             return state_mapping["display"]
         raise ValueError("Invalid state code")
 
@@ -135,6 +135,7 @@ class PatientUpdateModel(BaseModel):
 
     @field_validator('gender')
     def validate_gender(cls, value):
+        value = value.upper()
         if value in GENDER_MAPPING:
             return GENDER_MAPPING[value]
         raise ValueError("Invalid gender code")
@@ -142,21 +143,21 @@ class PatientUpdateModel(BaseModel):
     @field_validator('ethnicity')
     def validate_ethnicity(cls, value):
         ethnicity_mapping = MasterClient.fetch_master_using_code('ethnicity', value)
-        if value == ethnicity_mapping["code"]:
+        if ethnicity_mapping and value == ethnicity_mapping["code"]:
             return ethnicity_mapping["display"]
         raise ValueError(f"Invalid ethnicity code")
 
     @field_validator('race')
     def validate_race(cls, value):
         race_mapping = MasterClient.fetch_master_using_code('race', value)
-        if value == race_mapping["code"]:
+        if race_mapping and value == race_mapping["code"]:
             return race_mapping["display"]
         raise ValueError("Invalid race code")
 
     @field_validator('state')
     def validate_state(cls, value):
         state_mapping = MasterClient.fetch_master_using_code('state', value)
-        if value == state_mapping["code"]:
+        if state_mapping and value == state_mapping["code"]:
             return state_mapping["display"]
         raise ValueError("Invalid state code")
 

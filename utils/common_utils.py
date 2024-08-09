@@ -100,20 +100,18 @@ def permission_required(resource: str, action: str):
             if not auth_token:
                 raise HTTPException(status_code=403, detail="Authentication token is Mandatory")
             bearer_token.set(auth_token.split("Bearer ")[1])
-            if not auth_token:
-                raise HTTPException(status_code=403, detail="Permission denied: Missing auth_token")
             payload = decode_jwt_without_verification(auth_token)
             user_id = payload.get("sub")
             user_id_context.set(user_id)
             if not get_user(user_id, auth_token):
-                raise HTTPException(status_code=403, detail="Permission denied")
+                raise HTTPException(status_code=401, detail="Permission denied")
             status, role = has_permission(user_id, resource, action, auth_token)
             if not status:
                 raise HTTPException(status_code=403, detail="Permission denied")
             if role.lower() != "admin" and "patient_id" in kwargs:
                 patient_id = kwargs.get("patient_id")
                 if user_id != patient_id:
-                    raise HTTPException(status_code=403, detail="Permission denied: Unauthorized Patient")
+                    raise HTTPException(status_code=401, detail="Permission denied: Unauthorized Patient")
             return await func(*args, **kwargs)
 
         return wrapper
@@ -184,9 +182,8 @@ def azure_file_handler(container_name, blob_name, blob_data=None, fetch=False, d
     """
     blob_service_client = BlobServiceClient.from_connection_string(os.environ.get("CONNECTION_STRING"))
     container_client = blob_service_client.get_container_client(container_name)
-    blob_client = container_client.get_blob_client(blob_name)
-
     if delete:
+        blob_client = container_client.get_blob_client(blob_name)
         logger.info(f"Deleting the blob for URL: {blob_name}")
         return blob_client.delete_blob()
 
@@ -200,15 +197,28 @@ def azure_file_handler(container_name, blob_name, blob_data=None, fetch=False, d
     )
     if fetch:
         logger.info(f"Fetching the blob for URL: {blob_name}")
-        return f"{blob_client.url}?{sas_token}" if blob_client.exists else False
-
+        blob_list = container_client.list_blobs(name_starts_with=blob_name)
+        # Iterate over the blobs and find the one you need
+        name_list = []
+        for each_blob in blob_list:
+            name_list.append(each_blob.name)
+            blob_client = container_client.get_blob_client(name_list[0])
+            return f"{blob_client.url}?{sas_token}" if blob_client.exists() else False
+        else:
+            return False
     logger.info(f"Creating/ Updating the blob for URL: {blob_name}")
+    blob_client = container_client.get_blob_client(blob_name)
     blob_client.upload_blob(blob_data, overwrite=True)
-
     return f"{blob_client.url}?{sas_token}"
 
 
 def validate_file_size(file_data):
     logger.info('Validating the size of the file to be uploaded')
     return False if round(len(file_data) / (1024 * 1024), 2) > FILE_SIZE else file_data
+
+
+def get_file_extension(file_name):
+    # os.path.splitext splits the file name into two parts: the base name and the extension
+    _, file_extension = os.path.splitext(file_name)
+    return file_extension
 
