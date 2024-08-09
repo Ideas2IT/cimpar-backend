@@ -174,7 +174,7 @@ def prepare_encounters(
 
             if "identifier" in participant:
                 identifier_value = participant["identifier"].get("value", None)
-                identifier_system = participant["identifier"].get("system", None)
+                identifier_system = participant["identifier"].get("system", "http://example.org/system")
                 practitioner.identifier = [Identifier(system=identifier_system, value=identifier_value)]
 
             practitioners.append(practitioner)
@@ -187,5 +187,4 @@ def prepare_encounters(
                 practitioners,
             )
         )
-
     return (locations, practitioners, encounter)

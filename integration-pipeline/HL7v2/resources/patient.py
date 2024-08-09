@@ -1,4 +1,4 @@
-from aidbox.resource.patient import Patient, Patient_Communication
+from aidbox.resource.patient import Patient, Patient_Communication, Patient_Contact
 from aidbox.resource.appointment import Appointment
 from aidbox.base import (
     HumanName,
@@ -8,7 +8,7 @@ from aidbox.base import (
     CodeableConcept,
     Coding,
     Extension,
-    Meta
+    Meta,
 )
 
 from HL7v2 import get_resource_id, get_patient_id
@@ -81,6 +81,9 @@ def prepare_patient(data):
     if "telecom" in data and data["telecom"]:
         existing_telecom_dict = {}
         contact = patient.contact and patient.contact[0]
+        if not contact:
+            contact = Patient_Contact()
+            patient.contact = [contact]
         if contact and contact.telecom:
             for tp in contact.telecom:
                 if tp.system == "email":
@@ -98,6 +101,7 @@ def prepare_patient(data):
                 existing_telecom_dict[("home", "phone")] = ContactPoint(use="home", system="phone", value=value)
             elif system == "phone" and use == "temp":
                 existing_telecom_dict[("temp", "phone")] = ContactPoint(use="temp", system="phone", value=value)
+
         patient.contact[0].telecom = list(existing_telecom_dict.values())
 
     if "identifier" in data:
