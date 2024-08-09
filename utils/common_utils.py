@@ -199,13 +199,18 @@ def azure_file_handler(container_name, blob_name, blob_data=None, fetch=False, d
         logger.info(f"Fetching the blob for URL: {blob_name}")
         blob_list = container_client.list_blobs(name_starts_with=blob_name)
         # Iterate over the blobs and find the one you need
-        name_list = []
         for each_blob in blob_list:
-            name_list.append(each_blob.name)
-            blob_client = container_client.get_blob_client(name_list[0])
+            blob_client = container_client.get_blob_client(each_blob.name)
             return f"{blob_client.url}?{sas_token}" if blob_client.exists() else False
         else:
             return False
+    # Deleting the existing files
+    name = blob_name.split(".")[0]
+    blob_list = container_client.list_blobs(name_starts_with=name)
+    # Iterate over the blobs and find the one you need
+    for each_blob in blob_list:
+        blob_client = container_client.get_blob_client(each_blob.name)
+        blob_client.delete_blob()
     logger.info(f"Creating/ Updating the blob for URL: {blob_name}")
     blob_client = container_client.get_blob_client(blob_name)
     blob_client.upload_blob(blob_data, overwrite=True)
