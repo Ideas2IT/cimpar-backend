@@ -67,6 +67,7 @@ class AidboxApi:
             json=self.dumps(exclude_unset=True),
             headers=headers,
         )
+        print(f"{response.text}")
         response.raise_for_status()  # TODO: handle and type HTTP codes except 200+
         data = response.json()
         self.id = data["id"]
