@@ -4,7 +4,7 @@ import logging
 from starlette.responses import JSONResponse
 
 from models.insurance_validation import CoverageModel
-from utils.common_utils import permission_required, validate_file_size
+from utils.common_utils import permission_required, validate_file_size, get_file_extension
 from controller.insurance_controller import CoverageClient
 from typing import Optional
 
@@ -34,13 +34,15 @@ async def insurance_route(
     )
     logger.info(f"Request Payload: {ins_plan}")
     file_data = None
+    file_extension = None
     if file:
         file_data = await file.read()
+        file_extension = get_file_extension(file.filename)
         if not validate_file_size(file_data):
             return JSONResponse(
                 content="File size should be less than 5 MB", status_code=status.HTTP_400_BAD_REQUEST
             )
-    response = CoverageClient.create_coverage_insurance(ins_plan, patient_id, file_data)
+    response = CoverageClient.create_coverage_insurance(ins_plan, patient_id, file_data, file_extension)
     logger.info("Response: %s" % response)
     return response
 
@@ -78,14 +80,16 @@ async def update_insurance(
         providerName=providerName
     )
     file_data = None
+    file_extension = None
     if file:
         file_data = await file.read() if file else None
+        file_extension = get_file_extension(file.filename)
         if not validate_file_size(file_data):
             return JSONResponse(
                 content="File size should be less than 5 MB", status_code=status.HTTP_400_BAD_REQUEST
             )
     logger.info(f"Request Patient_id: {patient_id}")
-    return CoverageClient.update_by_insurance_id(patient_id, update_insurance_data, insurance_id, file_data)
+    return CoverageClient.update_by_insurance_id(patient_id, update_insurance_data, insurance_id, file_data, file_extension)
 
 
 @router.delete('/insurance/{patient_id}/{insurance_id}')

@@ -87,7 +87,7 @@ class PatientClient:
                 id=patient_id,
                 name=[
                     HumanName(
-                        family=pat.lastName, given=[pat.firstName, pat.middleName]
+                        family=pat.lastName, given=[pat.firstName, pat.middleName] if pat.middleName else [pat.firstName]
                     )
                 ],
                 identifier=[Identifier(system=IDENTIFIER_SYSTEM, value=IDENTIFIER_VALUE)],
@@ -253,7 +253,7 @@ class PatientClient:
                 id=patient_id,
                 name=[
                     HumanName(
-                        family=pat.lastName, given=[pat.firstName, pat.middleName]
+                        family=pat.lastName, given=[pat.firstName, pat.middleName] if pat.middleName else [pat.firstName]
                     )
                 ],
                 gender=pat.gender.lower(),
