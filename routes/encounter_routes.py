@@ -6,8 +6,7 @@ from starlette.responses import JSONResponse
 
 from models.encounter_validation import EncounterModel, EncounterUpdateModel
 from controller.encounter_controller import EncounterClient
-from utils.common_utils import permission_required, validate_file_size
-
+from utils.common_utils import permission_required, validate_file_size, get_file_extension
 
 router = APIRouter()
 logger = logging.getLogger("log")
@@ -43,15 +42,18 @@ async def create_encounter(
     )
     logger.info(f"Request Payload: {encounter}")
     file_data = None
+    file_extension = None
     if file:
         file_data = await file.read() if file else None
+        file_extension = get_file_extension(file.filename)
         if not validate_file_size(file_data):
             return JSONResponse(
                 content="File size should be less than 5 MB", status_code=status.HTTP_400_BAD_REQUEST
             )
-    response = EncounterClient.create_encounter(encounter, patient_id, file_data)
+    response = EncounterClient.create_encounter(encounter, patient_id, file_data, file_extension)
     logger.info(f"Response Payload: {response}")
     return response
+
 
 @router.get("/encounter/{patient_id}")
 @permission_required("ENCOUNTER", "READ")
@@ -108,14 +110,17 @@ async def update_encounter(
         follow_up_care=follow_up_care,
         activity_notes=activity_notes
     )
+    file_extension = None
+    file_data = None
     if file:
         file_data = await file.read() if file else None
+        file_extension = get_file_extension(file.filename)
         if not validate_file_size(file_data):
             return JSONResponse(
                 content="File size should be less than 5 MB", status_code=status.HTTP_400_BAD_REQUEST
             )
     logger.info(f"Updating encounter ID:{patient_id}")
-    return EncounterClient.update_by_patient_id(patient_id, encounter_id, encounter, file)
+    return EncounterClient.update_by_patient_id(patient_id, encounter_id, encounter, file_data, file_extension)
 
 
 @router.delete("/encounter/{patient_id}/{encounter_id}")

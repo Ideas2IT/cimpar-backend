@@ -29,7 +29,7 @@ logger = logging.getLogger("log")
 
 class EncounterClient:
     @staticmethod
-    def create_encounter(enc: EncounterModel, patient_id, upload_file):
+    def create_encounter(enc: EncounterModel, patient_id, upload_file, file_extension=None):
         try:
             result = {}
             encounter = Encounter(
@@ -81,7 +81,7 @@ class EncounterClient:
             encounter.save()
             result["id"] = encounter.id
             if upload_file and encounter.id:
-                file_path_name = f'{patient_id}/{encounter.id}'
+                file_path_name = f'{patient_id}/{encounter.id}{file_extension}'
                 logger.info(f'Inserting blob data for path: {file_path_name}')
                 blob_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
                                               blob_name=file_path_name,
@@ -123,8 +123,7 @@ class EncounterClient:
                 file_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
                                               blob_name=f"{patient_id}/{encounter_values['resource']['id']}",
                                               fetch=True)
-                if file_url:
-                    encounter_values['resource']['file_url'] = file_url
+                encounter_values['resource']['file_url'] = file_url
             result["data"] = encounter_data
             result["current_page"] = page
             result["page_size"] = count
@@ -161,10 +160,8 @@ class EncounterClient:
                 file_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
                                               blob_name=f"{patient_id}/{encounter_id}",
                                               fetch=True)
-                if file_url:
-                    encounter_json['file_url'] = file_url
+                encounter_json['file_url'] = file_url
             return encounter_json
-
         except Exception as e:
             logger.error(f"Error retrieving encounters: {str(e)}")
             logger.error(traceback.format_exc())
@@ -179,7 +176,7 @@ class EncounterClient:
             )
 
     @staticmethod
-    def update_by_patient_id(patient_id: str, encounter_id: str, enc: EncounterUpdateModel, upload_file):
+    def update_by_patient_id(patient_id: str, encounter_id: str, enc: EncounterUpdateModel, upload_file, file_extension=None):
         try:
             result = {}
             response = Encounter.make_request(method="GET",
@@ -242,8 +239,8 @@ class EncounterClient:
                 encounter.save()
                 result["encounter"] = encounter.id
                 if upload_file and encounter.id:
-                    logger.info(f"Cresting/Updating blob data for URL: {patient_id}/{encounter.id}")
-                    file_path_name = f'{patient_id}/{encounter.id}'
+                    logger.info(f"Creating/Updating blob data for URL: {patient_id}/{encounter.id}")
+                    file_path_name = f'{patient_id}/{encounter.id}{file_extension}'
                     upload_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
                                                     blob_name=file_path_name,
                                                     blob_data=upload_file)
@@ -326,7 +323,6 @@ class EncounterClient:
                 content={"error": "patient provided was not matched with visit history"},
                 status_code=status.HTTP_404_NOT_FOUND
             )
-
         except Exception as e:
             logger.error(f"Unable to delete encounter: {str(e)}")
             logger.error(traceback.format_exc())
