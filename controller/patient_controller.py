@@ -54,9 +54,13 @@ class PatientClient:
             if Patient.get({"id": patient_id_update}):
                 result_data = {}
                 patient_update = PatientClient.update_patient_by_id(pat, patient_id_update, from_patient=True)
-                result_data["id"] = patient_update.get("id")              
+                result_data["id"] = patient_update.get("id")
+                coverage_values = {}
                 if pat.haveInsurance:
-                    coverage_values = CoverageClient.create_coverage(pat, patient_id_update, from_patient=True)
+                    try:
+                        coverage_values = CoverageClient.create_coverage(pat, patient_id_update, from_patient=True)
+                    except Exception as e:
+                        logger.info(f"Unable to create the insurance {e}")
                     if coverage_values:
                         if coverage_values.get('is_primary_insurance'):
                             result_data['primary_insurance_id'] = coverage_values.get('is_primary_insurance')
@@ -152,7 +156,11 @@ class PatientClient:
             patient.save()
             result['id'] = patient.id
             if pat.haveInsurance:
-                coverage_values = CoverageClient.create_coverage(pat, patient.id, from_patient=True)
+                coverage_values = {}
+                try:
+                    coverage_values = CoverageClient.create_coverage(pat, patient.id, from_patient=True)
+                except Exception as e:
+                    logger.info(f"Unable to create the insurance {e}")
                 if coverage_values:
                     if coverage_values.get('is_primary_insurance'):
                         result['is_primary_insurance'] = coverage_values.get('is_primary_insurance')
@@ -177,7 +185,6 @@ class PatientClient:
                 "error": "Unable to create patient",
                 "details": str(e),
             }
-
             return JSONResponse(
                 content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
             )

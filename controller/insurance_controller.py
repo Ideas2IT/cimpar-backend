@@ -28,26 +28,20 @@ class CoverageClient:
             if from_patient:
                 response_coverage = CoverageWrapper.make_request(method="GET", endpoint=f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
                 existing_coverages = response_coverage.json() if response_coverage else {}
-                patient_id_occurrences = sum(1 for entry in existing_coverages.get('entry', []) if entry['resource']['beneficiary']['reference'] == f"Patient/{patient_id}")
-                if patient_id_occurrences >= 3:
-                    logger.error(f"A patient can only have 3 insurance")
-                    return JSONResponse(
-                        content="A patient can only have 3 insurance", status_code=status.HTTP_400_BAD_REQUEST
-                    )
                 insurance_id = CoverageClient.get_insurance_ids(existing_coverages)
                 for id, insurance_id in insurance_id.items():
                     if insurance_id is not None:
-                        insurance_value = CoverageClient.delete_by_insurance_id(insurance_id, patient_id, from_patient)
-                    logger.info(f"Coverage Not Found: {patient_id} and {insurance_value}")
-                if existing_coverages:
-                        primary_insurance_plan = CoverageClient.create_primary_insurance(primary_insurance, coverage, patient_id)
-                        primary_insurance_plan.save()
-                        result["is_primary_insurance"] = primary_insurance_plan.id
-                        if coverage.haveSecondaryInsurance:
-                            secondary_insurance_plan = CoverageClient.create_secondary_insurance(secondary_insurance, coverage, patient_id)
-                            secondary_insurance_plan.save()
-                            result["is_secondary_insurance"] = secondary_insurance_plan.id
-                            result["created"] = True
+                        CoverageClient.delete_by_insurance_id(insurance_id, patient_id, from_patient)
+                    logger.info(f"Coverage Not Found: {patient_id}")
+                if coverage.haveInsurance:
+                    primary_insurance_plan = CoverageClient.create_primary_insurance(primary_insurance, coverage, patient_id)
+                    primary_insurance_plan.save()
+                    result["is_primary_insurance"] = primary_insurance_plan.id
+                if coverage.haveSecondaryInsurance:
+                    secondary_insurance_plan = CoverageClient.create_secondary_insurance(secondary_insurance, coverage, patient_id)
+                    secondary_insurance_plan.save()
+                    result["is_secondary_insurance"] = secondary_insurance_plan.id
+                    result["created"] = True
             return result
         except Exception as e:
             logger.error(f"Unable to create a insurance_plan: {str(e)}")
