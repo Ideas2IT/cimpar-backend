@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 import contextvars
+import random
 from datetime import datetime, timedelta
 
 import requests
@@ -239,4 +240,17 @@ def get_file_extension(file_name):
     # os.path.splitext splits the file name into two parts: the base name and the extension
     _, file_extension = os.path.splitext(file_name)
     return file_extension
+
+
+def generate_random_number(min_value=51, max_value=10000):
+    return random.randint(min_value, max_value)
+
+
+def delete_file_azure(container_name, blob_name):
+    # blob_service_client = BlobServiceClient.from_connection_string(os.environ.get("CONNECTION_STRING"))
+    # container_client = blob_service_client.get_container_client(container_name)
+    # blob_client = container_client.get_blob_client(blob_name)
+    # logger.info(f"Deleting the blob for URL: {blob_name}")
+    response = True if BlobServiceClient.from_connection_string(os.environ.get("CONNECTION_STRING")).get_container_client(container_name).get_blob_client(blob_name).delete_blob() is None else False
+    return response
 
