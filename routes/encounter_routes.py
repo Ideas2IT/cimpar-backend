@@ -1,12 +1,13 @@
 import logging
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Request, Query, Form, UploadFile, File, status
 
 from starlette.responses import JSONResponse
 
+from constants import VISIT_HISTORY_CONTAINER
 from models.encounter_validation import EncounterModel, EncounterUpdateModel
 from controller.encounter_controller import EncounterClient
-from utils.common_utils import permission_required, validate_file_size, get_file_extension
+from utils.common_utils import permission_required, validate_file_size, get_file_extension, azure_file_handler
 
 router = APIRouter()
 logger = logging.getLogger("log")
@@ -26,7 +27,7 @@ async def create_encounter(
     treatment_summary: str = Form(...),
     follow_up_care: str = Form(...),
     activity_notes: str = Form(...), 
-    file: Optional[UploadFile] = File(None, description="Optional file upload")
+    file: List[Optional[UploadFile]] = None
     ):
     # Create EncounterModel instance from form data
     encounter = EncounterModel(
@@ -41,16 +42,25 @@ async def create_encounter(
         activity_notes=activity_notes
     )
     logger.info(f"Request Payload: {encounter}")
-    file_data = None
-    file_extension = None
-    if file:
-        file_data = await file.read() if file else None
-        file_extension = get_file_extension(file.filename)
-        if not validate_file_size(file_data):
-            return JSONResponse(
-                content="File size should be less than 5 MB", status_code=status.HTTP_400_BAD_REQUEST
-            )
-    response = EncounterClient.create_encounter(encounter, patient_id, file_data, file_extension)
+    response = EncounterClient.create_encounter(encounter, patient_id)
+    response["file_url"] = False
+    if "id" in response and response["id"]:
+        response["file_url"] = []
+        count = 0
+        for each_file in file:
+            count += 1
+            file_data = await each_file.read() if each_file else None
+            file_extension = get_file_extension(each_file.filename)
+            if not validate_file_size(file_data):
+                return JSONResponse(
+                    content="File size should be less than 5 MB", status_code=status.HTTP_400_BAD_REQUEST
+                )
+            file_path_name = f'{patient_id}/{response["id"]}_{count}{file_extension}'
+            logger.info(f'Inserting blob data for path: {file_path_name}')
+            blob_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
+                                          blob_name=file_path_name,
+                                          blob_data=file_data)
+            response["file_url"].append(blob_url)
     logger.info(f"Response Payload: {response}")
     return response
 
@@ -110,17 +120,17 @@ async def update_encounter(
         follow_up_care=follow_up_care,
         activity_notes=activity_notes
     )
-    file_extension = None
-    file_data = None
+    file_details = {}
     if file:
         file_data = await file.read() if file else None
         file_extension = get_file_extension(file.filename)
+        file_details[file.filename] = {"data": file_data, "extension": file_extension}
         if not validate_file_size(file_data):
             return JSONResponse(
                 content="File size should be less than 5 MB", status_code=status.HTTP_400_BAD_REQUEST
             )
     logger.info(f"Updating encounter ID:{patient_id}")
-    return EncounterClient.update_by_patient_id(patient_id, encounter_id, encounter, file_data, file_extension)
+    return EncounterClient.update_by_patient_id(patient_id, encounter_id, encounter, file_details)
 
 
 @router.delete("/encounter/{patient_id}/{encounter_id}")
