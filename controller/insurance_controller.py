@@ -13,7 +13,7 @@ from models.insurance_validation import CoverageModel
 from models.patient_validation import PatientModel 
 from aidbox.resource.coverage import Coverage as CoverageWrapper
 
-from utils.common_utils import azure_file_handler
+from utils.common_utils import azure_file_handler, delete_file_azure
 
 logger = logging.getLogger("log")
 
@@ -492,3 +492,24 @@ class CoverageClient:
                 elif class_value == "secondary":
                     insurance_ids["secondary_id"] = resource.get("id")
         return insurance_ids
+    
+
+    @staticmethod
+    def delete_file(container_name, blob_name):
+        try:
+            if container_name and blob_name:
+                response = delete_file_azure(container_name, blob_name)
+                logger.error(f"delete response {response}")
+                if response:
+                    return {f"File deleted for {blob_name}"}
+        except Exception as e:
+            logger.error(f"Unable to delete file: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to delete file",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
