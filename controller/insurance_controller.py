@@ -137,7 +137,7 @@ class CoverageClient:
                 file_url = azure_file_handler(container_name=INSURANCE_CONTAINER,
                                               blob_name=f"{patient_id}/{insurance['resource']['id']}",
                                               fetch=True)
-                insurance['resource']['file_url'] = file_url
+                insurance['resource']['file_url'] = file_url[0] if file_url else False
             return {"coverage": coverage}
         except Exception as e:
             logger.error(f"Unable to get coverage data: {str(e)}")
@@ -170,12 +170,7 @@ class CoverageClient:
                 file_url = azure_file_handler(container_name=INSURANCE_CONTAINER,
                                               blob_name=f"{patient_id}/{insurance_id}",
                                               fetch=True)
-                if not file_url:
-                    return JSONResponse(
-                        content={"error": "No matching file data found"},
-                        status_code=status.HTTP_404_NOT_FOUND
-                    )
-                coverage['file_url'] = file_url
+                coverage['file_url'] = file_url[0] if file_url else False
             return {"coverage": coverage}
         except Exception as e:
             logger.error(f"Unable to get coverage data: {str(e)}")

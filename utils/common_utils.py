@@ -169,6 +169,17 @@ def paginate(model: Type[T], page: int = 1, page_size: int = 10) -> Dict[str, An
         raise HTTPException(status_code=400, detail=str(e))
 
 
+def generate_sas_token(blob_service_client, container_name, blob_name):
+    return generate_blob_sas(
+        account_name=blob_service_client.account_name,
+        container_name=container_name,
+        blob_name=blob_name,
+        account_key=blob_service_client.credential.account_key,
+        permission=BlobSasPermissions(read=True),
+        expiry=datetime.utcnow() + timedelta(hours=FILE_ETL_HOUR)
+    )
+
+
 def azure_file_handler(container_name, blob_name, blob_data=None, fetch=False, delete=False):
     """
     Upload a file to Azure Blob Storage.
@@ -183,36 +194,38 @@ def azure_file_handler(container_name, blob_name, blob_data=None, fetch=False, d
     blob_service_client = BlobServiceClient.from_connection_string(os.environ.get("CONNECTION_STRING"))
     container_client = blob_service_client.get_container_client(container_name)
     if delete:
-        blob_client = container_client.get_blob_client(blob_name)
-        logger.info(f"Deleting the blob for URL: {blob_name}")
-        return blob_client.delete_blob()
-
-    sas_token = generate_blob_sas(
-        account_name=blob_service_client.account_name,
-        container_name=container_name,
-        blob_name=blob_name,
-        account_key=blob_service_client.credential.account_key,
-        permission=BlobSasPermissions(read=True),
-        expiry=datetime.utcnow() + timedelta(hours=FILE_ETL_HOUR)
-    )
+        # blob_client = container_client.get_blob_client(blob_name)
+        # logger.info(f"Deleting the blob for URL: {blob_name}")
+        # return blob_client.delete_blob()
+        name = blob_name.split(".")[0]
+        blob_list = container_client.list_blobs(name_starts_with=name)
+        # Iterate over the blobs and find the one you need
+        for each_blob in blob_list:
+            blob_client = container_client.get_blob_client(each_blob.name)
+            blob_client.delete_blob()
+        return True
     if fetch:
         logger.info(f"Fetching the blob for URL: {blob_name}")
         blob_list = container_client.list_blobs(name_starts_with=blob_name)
         # Iterate over the blobs and find the one you need
+        all_blobs = []
         for each_blob in blob_list:
+            sas_token = generate_sas_token(
+                blob_service_client,
+                container_name,
+                each_blob.name
+            )
             blob_client = container_client.get_blob_client(each_blob.name)
-            return f"{blob_client.url}?{sas_token}" if blob_client.exists() else False
-        else:
-            return False
-    # Deleting the existing files
-    name = blob_name.split(".")[0]
-    blob_list = container_client.list_blobs(name_starts_with=name)
-    # Iterate over the blobs and find the one you need
-    for each_blob in blob_list:
-        blob_client = container_client.get_blob_client(each_blob.name)
-        blob_client.delete_blob()
+            if blob_client.exists():
+                all_blobs.append(f"{blob_client.url}?{sas_token}")
+        return all_blobs
     logger.info(f"Creating/ Updating the blob for URL: {blob_name}")
     blob_client = container_client.get_blob_client(blob_name)
+    sas_token = generate_sas_token(
+        blob_service_client,
+        container_name,
+        blob_name
+    )
     blob_client.upload_blob(blob_data, overwrite=True)
     return f"{blob_client.url}?{sas_token}"
 
