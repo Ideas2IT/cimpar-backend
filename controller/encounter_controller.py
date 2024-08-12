@@ -29,7 +29,7 @@ logger = logging.getLogger("log")
 
 class EncounterClient:
     @staticmethod
-    def create_encounter(enc: EncounterModel, patient_id, upload_file, file_extension=None):
+    def create_encounter(enc: EncounterModel, patient_id):
         try:
             result = {}
             encounter = Encounter(
@@ -80,13 +80,6 @@ class EncounterClient:
             )
             encounter.save()
             result["id"] = encounter.id
-            if upload_file and encounter.id:
-                file_path_name = f'{patient_id}/{encounter.id}{file_extension}'
-                logger.info(f'Inserting blob data for path: {file_path_name}')
-                blob_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
-                                              blob_name=file_path_name,
-                                              blob_data=upload_file)
-                result["file_url"] = blob_url
             result["created"] = True
             logger.info(f"Added Successfully in DB: {result}")
             return result
@@ -123,7 +116,7 @@ class EncounterClient:
                 file_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
                                               blob_name=f"{patient_id}/{encounter_values['resource']['id']}",
                                               fetch=True)
-                encounter_values['resource']['file_url'] = file_url
+                encounter_values['resource']['file_url'] = file_url if file_url else False
             result["data"] = encounter_data
             result["current_page"] = page
             result["page_size"] = count
@@ -160,7 +153,7 @@ class EncounterClient:
                 file_url = azure_file_handler(container_name=VISIT_HISTORY_CONTAINER,
                                               blob_name=f"{patient_id}/{encounter_id}",
                                               fetch=True)
-                encounter_json['file_url'] = file_url
+                encounter_json['file_url'] = file_url if file_url else False
             return encounter_json
         except Exception as e:
             logger.error(f"Error retrieving encounters: {str(e)}")
