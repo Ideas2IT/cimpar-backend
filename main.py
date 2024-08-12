@@ -26,7 +26,8 @@ from utils.logging_config import simple_logger
 from utils.config import Logs
 from routes import (insurance_routes, integration_pipeline_router, account_router, patient_routes,
                     encounter_routes, medication_routes, condition_allergy_routes, appointment_routes,
-                    lab_result_routes, custom_message_router, service_history_routes, master_routers)
+                    lab_result_routes, custom_message_router, service_history_routes, master_routers,
+                    version_router)
 
 
 # Load settings
@@ -63,6 +64,7 @@ app.include_router(master_routers.router, prefix="/api", tags=["MASTER"])
 app.include_router(medication_routes.router, prefix="/api", tags=["MEDICATION"])
 app.include_router(patient_routes.router, prefix="/api", tags=["PATIENT"])
 app.include_router(service_history_routes.router, prefix="/api", tags=["SERVICE_HISTORY"])
+app.include_router(version_router.router, prefix="/api", tags=["VERSION"])
 
 
 @app.get("/api/documentation", include_in_schema=False)
