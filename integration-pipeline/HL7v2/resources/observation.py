@@ -121,10 +121,10 @@ def prepare_observation(
         observation.valueString = " ".join(data["value"]["string"])
 
     if "value" in data.get("value", {}) or "units" in data.get("value", {}):
-        if "value" in data["value"] and "number" in data["value"]:
+        if "value" in data and "number" in data["value"]:
             observation.valueQuantity = Quantity(
-                value = float(data["value"]["number"][0]) if "number" in data["value"] and isinstance(data["value"]["number"], list) and len(data["value"]["number"]) > 0 else 0,
-                unit = data["value"]["units"]["code"] if "units" in data["value"] and "code" in data["value"]["units"] else None
+                value=float(data["value"]["number"][0]) if "number" in data["value"] and isinstance(data["value"]["number"], list) and len(data["value"]["number"]) > 0 else 0,
+                unit=data["value"]["units"]["code"] if "units" in data["value"] and "code" in data["value"]["units"] else None
             )
 
     if "ED" in data.get("value", {}):
