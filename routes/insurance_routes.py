@@ -100,7 +100,7 @@ async def delete_insurance(insurance_id: str, patient_id: str, request: Request)
 
 @router.delete('/insurance/file')
 @permission_required("INSURANCE", "DELETE")
-async def delete_file_insurance(container_name, blob_name, request: Request):
-    logger.info(f"Deleting file encounter:{container_name} and {blob_name}")
-    return CoverageClient.delete_file(container_name, blob_name)
+async def delete_file_insurance(blob_name, request: Request):
+    logger.info(f"Deleting file encounter{blob_name}")
+    return CoverageClient.delete_file(blob_name)
 
