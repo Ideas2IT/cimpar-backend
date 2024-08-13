@@ -162,9 +162,9 @@ async def delete_encounter(patient_id: str, encounter_id: str, request: Request)
 
 @router.delete("/encounter/file")
 @permission_required("ENCOUNTER", "DELETE")
-async def delete_file_encounter(container_name, blob_name, request: Request):
-    logger.info(f"Deleting file encounter:{container_name} and {blob_name}")
-    return EncounterClient.delete_file(container_name, blob_name)
+async def delete_file_encounter(blob_name, request: Request):
+    logger.info(f"Deleting file encounter {blob_name}")
+    return EncounterClient.delete_file(blob_name)
 
 
 
