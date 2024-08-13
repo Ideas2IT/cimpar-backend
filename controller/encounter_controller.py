@@ -323,8 +323,9 @@ class EncounterClient:
             )
 
     @staticmethod
-    def delete_file(container_name, blob_name):
+    def delete_file(blob_name):
         try:
+            container_name =  VISIT_HISTORY_CONTAINER
             if container_name and blob_name:
                 response = delete_file_azure(container_name, blob_name)
                 logger.error(f"delete response {response}")
