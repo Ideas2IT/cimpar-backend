@@ -392,7 +392,7 @@ class PatientClient:
 
         # Extract address components
         if patient.address:
-            extracted_data["address"] = patient.address[0].line if patient.address[0].line else None
+            extracted_data["address"] = ", ".join(patient.address[0].line) if patient.address[0].line else None
             extracted_data["zipCode"] = patient.address[0].postalCode
             extracted_data["city"] = patient.address[0].city
             extracted_data["country"] = patient.address[0].country
