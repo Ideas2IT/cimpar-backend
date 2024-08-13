@@ -162,7 +162,7 @@ class AuthClient:
             logger.error(f"Unable to login: {str(e)}")
             logger.error(traceback.format_exc())
             error_response_data = {
-                "error": "Unable to login: Incorrect username or password",
+                "error": "Unable to login: Incorrect email or password",
                 "details": str(e),
             }
             return JSONResponse(
