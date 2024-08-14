@@ -8,8 +8,6 @@ from fastapi.responses import JSONResponse
 from aidbox.base import CodeableConcept, Reference, Coding, Annotation
 from aidbox.resource.appointment import Appointment_Participant
 from models.appointment_validation import StatusModel
-from HL7v2 import get_md5
-from HL7v2.resources.observation import get_status
 
 from constants import (
     PATIENT_REFERENCE,  
