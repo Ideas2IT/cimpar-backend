@@ -36,6 +36,13 @@ def validate_name(name: str) -> str:
     return name
 
 
+def validate_state(value):
+    state_mapping = MasterClient.fetch_master_using_code('state', value.strip())
+    if state_mapping and value == state_mapping["code"]:
+        return state_mapping["display"]
+    return None
+
+
 class InsuranceDetail(BaseModel):
     providerName: Optional[str] = None
     policyNumber: Optional[str] = None
@@ -92,9 +99,9 @@ class PatientModel(BaseModel):
 
     @field_validator('state')
     def validate_state(cls, value):
-        state_mapping = MasterClient.fetch_master_using_code('state', value)
-        if state_mapping and value == state_mapping["code"]:
-            return state_mapping["display"]
+        state_mapping = validate_state(value)
+        if state_mapping:
+            return state_mapping
         raise ValueError("Invalid state code")
 
     @field_validator('firstName', 'middleName', 'lastName', 'gender', 'city', 'state', 'country')
@@ -156,9 +163,9 @@ class PatientUpdateModel(BaseModel):
 
     @field_validator('state')
     def validate_state(cls, value):
-        state_mapping = MasterClient.fetch_master_using_code('state', value)
-        if state_mapping and value == state_mapping["code"]:
-            return state_mapping["display"]
+        state_mapping = validate_state(value)
+        if state_mapping:
+            return state_mapping
         raise ValueError("Invalid state code")
 
     @field_validator('firstName', 'middleName', 'lastName', 'gender', 'city', 'state', 'country')
