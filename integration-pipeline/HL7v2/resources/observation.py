@@ -1,3 +1,7 @@
+import os
+import base64
+import logging
+from io import BytesIO
 from typing import Optional, Union
 from aidbox.resource.servicerequest import ServiceRequest
 from aidbox.resource.observation import Observation, Observation_ReferenceRange
@@ -13,13 +17,15 @@ from aidbox.base import (
     Identifier,
     Reference,
     Address,
-    Annotation,
-    Extension,
-    Attachment
+    Annotation
 )
+from constants import CONTAINER_NAME
+from utils.azure_util import AzureUtil
 
 from HL7v2 import get_md5
 from HL7v2.resources.utils import convert_datetime_to_utc
+
+logger = logging.getLogger("log")
 
 def get_category(data):
     if data["code"]["code"] in ["1010.1", "1010.3"]:
@@ -127,15 +133,6 @@ def prepare_observation(
                 unit=data["value"]["units"]["code"] if "units" in data["value"] and "code" in data["value"]["units"] else None
             )
 
-    if "ED" in data.get("value", {}):
-        observation.extension = list(map(lambda attachment_data: Extension(
-            url="https://hl7.org/fhir/R5/StructureDefinition/extension-Observation.valueAttachment",
-            valueAttachment=Attachment(
-                data=attachment_data.get("data"),
-                contentType=attachment_data.get("data_subtype")
-            )
-        ), data.get("value", {}).get("ED", {})))
-
     if "issued" in data:
         observation.issued = convert_datetime_to_utc(data["issued"])
 
@@ -214,4 +211,15 @@ def prepare_observation(
     if encounter is not None:
         observation.encounter = Reference(reference="Encounter/" + encounter.id)
 
+    if 'value' in data and 'type' in data['value'] and data['value']['type'] == "ED":
+        file_format = data['value']['ED'][0]['data_subtype']
+        file_extension = f".{file_format.lower()}"
+        pdf_data = base64.b64decode(data['value']['ED'][0]['data'])
+        upload_pdf = BytesIO(pdf_data)
+        CONNECTION_STRING = os.environ.get("CONNECTION_STRING")
+        upload_blob = AzureUtil.upload_to_azure_blob(container_name=CONTAINER_NAME,
+                                                        blob_name=f"{patient.id}/{observation.id}{file_extension}",
+                                                        blob_data=upload_pdf,
+                                                        connection_string=CONNECTION_STRING)
+        logger.info(f"blob storage {upload_blob}")
     return (observation, organizations, practitioner_roles)

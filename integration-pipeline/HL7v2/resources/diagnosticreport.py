@@ -1,5 +1,6 @@
 from aidbox.resource.diagnosticreport import DiagnosticReport
 from aidbox.resource.practitionerrole import PractitionerRole
+from aidbox.resource.observation import Observation
 from aidbox.resource.patient import Patient
 from aidbox.resource.encounter import Encounter
 from aidbox.resource.specimen import Specimen, Specimen_Collection
@@ -13,7 +14,6 @@ from aidbox.base import (
     CodeableConcept,
     Coding,
     Identifier,
-    Extension
 )
 
 def get_status(code):
@@ -35,7 +35,7 @@ def get_status(code):
 
 def prepare_diagnostic_report(data, patient: Patient, encounter: Encounter, parent: DiagnosticReport) -> (DiagnosticReport, list[PractitionerRole]):
     practitioner_roles: list[PractitionerRole] = []
-    observations: list[Observations] = []
+    observations: list[Observation] = []
 
     diagnostic_report = parent or DiagnosticReport(
         id=get_md5(),
@@ -87,13 +87,6 @@ def prepare_diagnostic_report(data, patient: Patient, encounter: Encounter, pare
         practitioner_role = PractitionerRole(
             id=get_md5(),
             practitioner=Reference(
-                extension=[Extension(
-                    url="http://hl7.org/fhir/StructureDefinition/event-performerFunction",
-                    valueCodeableConcept=CodeableConcept(coding=[Coding(
-                        system="http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
-                        code="SPRF"
-                    )])
-                )],
                 type="Practitioner",
                 identifier=Identifier(
                     value=data.get("technician", [])[0].get("name", {}).get("id")

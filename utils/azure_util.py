@@ -1,5 +1,7 @@
+import logging
 from azure.storage.blob import BlobServiceClient
 
+logger = logging.getLogger("log")
 
 class AzureUtil:
 
@@ -17,6 +19,5 @@ class AzureUtil:
         blob_service_client = BlobServiceClient.from_connection_string(connection_string)
         container_client = blob_service_client.get_container_client(container_name)
         blob_client = container_client.get_blob_client(blob_name)
-
-        # with open(file_path, "rb") as data:
         blob_client.upload_blob(blob_data, overwrite=True)
+        logger.info(f"File uploaded to {container_name}/{blob_name}.")
