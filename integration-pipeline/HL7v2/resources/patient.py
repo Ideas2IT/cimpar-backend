@@ -12,6 +12,7 @@ from aidbox.base import (
 )
 
 from HL7v2 import get_resource_id, get_patient_id
+from models.patient_validation import validate_state
 
 
 def get_gender_by_code(code):
@@ -70,7 +71,7 @@ def prepare_patient(data):
                 lambda item: Address(
                     use=item.get("use", "work").lower(),
                     city=item.get("city", None),
-                    state=item.get("state", None),
+                    state=validate_state(item.get("state")),
                     country=item.get("country", None),
                     line=item.get("line", []),
                     postalCode=item.get("postalCode", None),
@@ -125,39 +126,34 @@ def prepare_patient(data):
         patient.meta = Meta(
             profile = ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"]
         )
-
+    if not patient.extension:
         patient.extension = []
-
     if "race" in data:
-        race_data = [
-            race for race in data["race"]
-            if "code" in race and "system" in race and "display" in race
-        ]
-        if race_data:
-            race_extension = Extension(
-                extension = list(
-                    map(
-                        lambda race: Extension(
-                            url = "detailed",
-                            valueCoding = Coding(
-                                system = race.get("system"),
-                                code = race.get("code"),
-                                display = race.get("display"),
-                            )
-                        ),
-                        data["race"]
-                    )
-                ),
+        race_extension = Extension(
+            extension = list(
+                map(
+                    lambda race: Extension(
+                        url = "detailed",
+                        valueCoding = Coding(
+                            system = race.get("system", ""),
+                            code = race.get("code", ""),
+                            display = race.get("display", ""),
+                        )
+                    ),
+                    data["race"]
+                )
+            ),
 
-                url = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
-            )
+            url = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+        )
 
-            race_extension.extension.append(Extension(
-                url = "text",
-                valueString = race_extension.extension[0].valueCoding.display
-            ))
+        race_extension.extension.append(Extension(
+            url = "text",
+            valueString = race_extension.extension[0].valueCoding.display
+            if race_extension.extension[0].valueCoding.display else race_extension.extension[0].valueCoding.code
+        ))
 
-            patient.extension.append(race_extension)
+        patient.extension.append(race_extension)
 
     if "ethnicity" in data:
         ethnicity_extension = Extension(
@@ -166,15 +162,14 @@ def prepare_patient(data):
                     lambda ethnicity: Extension(
                         url = "detailed",
                         valueCoding = Coding(
-                            system = ethnicity.get("system"),
-                            code = ethnicity.get("code"),
-                            display = ethnicity.get("display"),
+                            system = ethnicity.get("system", ""),
+                            code = ethnicity.get("code", ""),
+                            display = ethnicity.get("display", ""),
                         )
                     ),
                     data["ethnicity"]
                 )
             ),
-
             url = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
         )
 
