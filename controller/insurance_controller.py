@@ -296,7 +296,7 @@ class CoverageClient:
                 azure_file_handler(container_name=INSURANCE_CONTAINER,
                                    blob_name=f"{patient_id}/{insurance_id}",
                                    delete=True)
-                return {"deleted": True, "patient_id": patient_id}
+                return {"patient_id": patient_id, "insurance_id": insurance_id, "deleted": True, }
             error_response_data = { 
                 "error": "No insurance matches for this patient"
             }
