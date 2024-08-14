@@ -17,7 +17,7 @@ class ServiceHistoryClient:
                 final_response = ServiceHistoryClient.custom_query_with_pagination(
                     "filteredObservation", patient_id, name, page, count
                 )
-                if int(page) == 1:
+                if int(page) == 1 and not name:
                     response = AppointmentClient.get_appointment_by_patient_id(patient_id, UPCOMING_APPOINTMENT)
                     final_response["data"] = response + final_response.get("data", [])
             elif service_type is not None and service_type.lower() == "immunization":
@@ -28,7 +28,7 @@ class ServiceHistoryClient:
                 final_response = ServiceHistoryClient.custom_query_with_pagination(
                     "filteredImmunizationObservation", patient_id, name, page, count
                 )
-                if int(page) == 1:
+                if int(page) == 1 and not name:
                     response = AppointmentClient.get_appointment_by_patient_id(patient_id, UPCOMING_APPOINTMENT)
                     final_response["data"] = response + final_response.get("data", [])
             return JSONResponse(
