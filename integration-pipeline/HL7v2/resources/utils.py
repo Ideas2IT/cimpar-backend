@@ -1,11 +1,14 @@
-from datetime import datetime, timezone
+from dateutil import parser
+from datetime import timezone
 
 from aidbox.base import Coding
 
-def convert_datetime_to_utc(date):
-    local_time = datetime.fromisoformat(date)
 
-    return local_time.astimezone(timezone.utc).isoformat()
+def convert_datetime_to_utc(date_str):
+    dt = parser.parse(date_str)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
 
 def get_codings(data):
     codings = []
