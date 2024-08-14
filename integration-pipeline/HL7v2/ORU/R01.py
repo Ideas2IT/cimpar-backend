@@ -1,28 +1,28 @@
+import os
 import requests
 
 from aidbox.base import (
     API,
     Reference
 )
-from aidbox.resource.patient import Patient
 from aidbox.resource.location import Location
 from aidbox.resource.practitioner import Practitioner
 
 from HL7v2.resources.observation import prepare_observation
 from HL7v2.resources.patient import prepare_patient
-from HL7v2.resources.allergyintolerance import prepare_allergies
 from HL7v2.resources.encounter import prepare_encounters
-from HL7v2.resources.coverage import prepare_coverage
-from HL7v2.resources.relatedperson import prepare_related_persons
-from HL7v2.resources.procedure import prepare_procedure
-from HL7v2.resources.condition import prepare_condition
 from HL7v2.resources.diagnosticreport import prepare_diagnostic_report
+
+CONNECTION_STRING = os.environ.get("CONNECTION_STRING")
 
 
 def run(message):
+    source = message['src'] if 'src' in message else None
     patient_data = message.get("patient_group")
-    order_data = message.get("order_group")
-    visit_data = message.get("visit")
+    order_data = message.get("order_group") or message.get("patient_group").get("order_group")
+    visit_data = message.get("visit") or message.get("patient_group").get("visit")
+    specimens = message.get("specimens")
+    
     entry = []
     patient, patient_url = prepare_patient(patient_data["patient"])
     if "patient" in patient_data:
@@ -32,7 +32,7 @@ def run(message):
                 "request": {"method": "PUT", "url": patient_url},
             }
         )
-
+        
     if visit_data:
         locations, practitioners, encounter = prepare_encounters(visit_data, patient=patient)
         for location in locations:
@@ -63,10 +63,24 @@ def run(message):
                 "request": {"method": "PUT", "url": "Encounter"},
             }
         )
+        
+    if specimens:
+        for specimen in message.get("specimens", []):
+            for observation_data in specimen.get("observations", []):
+                observation, organizations, practitioner_roles = prepare_observation(observation_data, patient, parent=None,
+                                                                                 specimen=None, encounter=None)
+                entry.append({
+                        "resource": observation.dumps(exclude_unset=True, exclude_none=True),
+                        "request": {"method": "PUT", "url": "Observation/" + observation.id}
+                    })
 
     if order_data:
+        order_data = order_data[0] if isinstance(order_data, list) else order_data
         if "order" in order_data:
-            main_diagnostic_report, practitioner_roles, observations = prepare_diagnostic_report(order_data["order"], patient, encounter=None, parent=None)
+            main_diagnostic_report, practitioner_roles, observations = prepare_diagnostic_report(order_data["order"],
+                                                                                                 patient,
+                                                                                                 encounter=None,
+                                                                                                 parent=None)
 
             for practitioner_role in practitioner_roles:
                 entry.append({
@@ -86,7 +100,8 @@ def run(message):
             })
 
         for observation_data in order_data.get("observations", []):
-            observation, organizations, practitioner_roles = prepare_observation(observation_data, patient, parent = None, specimen=None, encounter=None)
+            observation, organizations, practitioner_roles = prepare_observation(observation_data, patient, parent=None,
+                                                                                 specimen=None, encounter=None)
 
             entry.append({
                 "resource": observation.dumps(exclude_unset=True, exclude_none=True),
@@ -106,7 +121,10 @@ def run(message):
                 })
 
         for observation_request_data in order_data.get("observation_requests", []):
-            diagnostic_report, practitioner_roles, observations = prepare_diagnostic_report(observation_request_data, patient, encounter=encounter, parent=main_diagnostic_report)
+            diagnostic_report, practitioner_roles, observations = prepare_diagnostic_report(observation_request_data,
+                                                                                            patient,
+                                                                                            encounter=encounter,
+                                                                                            parent=main_diagnostic_report)
 
             for practitioner_role in practitioner_roles:
                 entry.append({
@@ -120,8 +138,11 @@ def run(message):
                     "request": {"method": "PUT", "url": "Observation/" + observation.id}
                 })
 
+
             for observation_data in observation_request_data.get("observations", []):
-                observation, organizations, practitioner_roles = prepare_observation(observation_data, patient, parent = None, specimen=None, encounter=encounter)
+                observation, organizations, practitioner_roles = prepare_observation(observation_data, patient,
+                                                                                     parent=None, specimen=None,
+                                                                                     encounter=encounter)
                 if diagnostic_report.result:
                     diagnostic_report.result.append(Reference(reference="Observation/" + observation.id))
                 else:
