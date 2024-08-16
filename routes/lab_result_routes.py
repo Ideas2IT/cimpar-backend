@@ -36,3 +36,10 @@ async def get_lab_result_by_patient_id(
     ):
     logger.info(f"Service History ID:{patient_id}")
     return ObservationClient.get_lab_result(page, page_size, name, patient_id)
+
+
+@router.delete("/observation/file")
+@permission_required("OBSERVATION", "DELETE")
+async def delete_file_lab_result(blob_name, request: Request):
+    logger.info(f"Deleting file lab result {blob_name}")
+    return ObservationClient.delete_file(blob_name)
