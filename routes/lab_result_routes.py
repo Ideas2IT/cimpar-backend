@@ -15,7 +15,6 @@ async def get_lab_result_by_id(patient_id: str, lab_result_id: str, request: Req
     logger.info(f"Lab Result ID:{patient_id}")
     return ObservationClient.get_lab_result_by_id(patient_id, lab_result_id)
 
-
 @router.get("/observation")
 @permission_required("OBSERVATION", "ALL_READ")
 async def get_lab_result(
@@ -24,7 +23,6 @@ async def get_lab_result(
             page_size: int = Query(10, ge=1, le=100)
         ):
     return ObservationClient.get_all_lab_result(page, page_size)
-
 
 @router.get("/observation/{patient_id}")
 @permission_required("OBSERVATION", "READ")

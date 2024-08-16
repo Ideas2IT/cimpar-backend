@@ -106,6 +106,7 @@ class ObservationClient:
                 status_code=status.HTTP_400_BAD_REQUEST
             )
 
+
     @staticmethod
     def get_lab_result_by_patient_id(patient_id: str, page: int, page_size: int):
         try:
