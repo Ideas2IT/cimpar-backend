@@ -1,5 +1,5 @@
 from dateutil import parser
-from datetime import timezone
+from datetime import timezone, datetime
 
 from aidbox.base import Coding
 
@@ -29,3 +29,11 @@ def get_codings(data):
         ))
 
     return codings
+
+def format_birth_date(date_str):
+    if len(date_str) == 8:  
+        return datetime.strptime(date_str, "%Y%m%d").strftime("%Y-%m-%d")
+    elif len(date_str) == 12:  
+        return datetime.strptime(date_str, "%Y%m%d%H%M").strftime("%Y-%m-%d")
+    else:
+        return datetime.fromisoformat(date_str[:10]).strftime("%Y-%m-%d")
