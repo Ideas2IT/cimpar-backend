@@ -1,5 +1,4 @@
 from aidbox.resource.patient import Patient, Patient_Communication, Patient_Contact
-from aidbox.resource.appointment import Appointment
 from aidbox.base import (
     HumanName,
     ContactPoint,
@@ -11,8 +10,9 @@ from aidbox.base import (
     Meta,
 )
 
-from HL7v2 import get_resource_id, get_patient_id
+from HL7v2 import get_patient_id
 from models.patient_validation import validate_state
+from HL7v2.resources.utils import format_birth_date
 
 
 def get_gender_by_code(code):
@@ -60,7 +60,7 @@ def prepare_patient(data):
         patient.name = list(map(lambda item: HumanName(**item), data["name"]))
 
     if "birthDate" in data:
-        patient.birthDate = data["birthDate"]
+        patient.birthDate = format_birth_date(data["birthDate"])
 
     if "gender" in data:
         patient.gender = get_gender_by_code(data["gender"])
