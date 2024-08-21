@@ -8,9 +8,11 @@ from HL7v2.resources.immunization import prepare_immunization
 
 logger = logging.getLogger("log")
 
+
 def run(message):
     entry = []
     patient_group = message.get("patient_group", {})
+    patient_group["patient"]["icare_patient_id"] = message["icare_patient_id"]
     patient, patient_url = prepare_patient(patient_group["patient"])
 
     if "patient" in patient_group:

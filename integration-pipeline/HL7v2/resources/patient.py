@@ -1,4 +1,4 @@
-from aidbox.resource.patient import Patient, Patient_Communication, Patient_Contact
+from aidbox.resource.patient import Patient, Patient_Communication, Patient_Contact, Patient_Link
 from aidbox.base import (
     HumanName,
     ContactPoint,
@@ -8,6 +8,7 @@ from aidbox.base import (
     Coding,
     Extension,
     Meta,
+    Reference
 )
 
 from HL7v2 import get_patient_id
@@ -179,5 +180,14 @@ def prepare_patient(data):
         ))
         
         patient.extension.append(ethnicity_extension)
-
+        if "icare_patient_id" in data and data["icare_patient_id"]:
+            patient.link = [
+                Patient_Link(
+                    type="refer",
+                    other=Reference(
+                        id=data["icare_patient_id"],
+                        reference="icare_patient_id"
+                    )
+                )
+            ]
     return patient, patient_url

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Response, status, Body, Query
+from fastapi import APIRouter, Request, Response, status, Body, Query, responses
 import logging
 from typing import Optional
 from aidbox.base import API
@@ -44,11 +44,30 @@ async def hl7v2_oru_r01(request: Request, raw_data: str =Body(..., media_type="t
 
 
 @router.post("/VXU_V04")
-async def hl7v2_vxu_v04(request: Request, raw_data: str =Body(..., media_type="text/plain")):
-    raw_data = await request.body()
-    logger.info("raw_data: %s" % raw_data)
-    response = await request_wrapper(raw_data, V04.run)
-    return response
+async def hl7v2_vxu_v04(
+    request: Request,
+    raw_data: str =Body(..., media_type="text/plain"),
+    icare_patient_id: Optional[str] = None
+):
+    try:
+        raw_data = await request.body()
+        logger.info("raw_data: %s" % raw_data)
+        parsed_data = await convert_message(raw_data.decode("utf-8"))
+        if not parsed_data.get("parsed", {}).get("parsed", None):
+            raise Exception("Unable to convert the HL7 message, Please provide the valid HL7 data")
+        parsed_data["parsed"]["parsed"]["icare_patient_id"] = icare_patient_id
+        response = V04.run(parsed_data["parsed"]["parsed"])
+        return response
+    except Exception as e:
+        logger.error(f"Error creating VXU V04: {str(e)}")
+        logger.error(traceback.format_exc())
+        error_response_data = {
+            "error": "Unable to create Immunization",
+            "details": str(e),
+        }
+        return responses.JSONResponse(
+            content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 
 @router.get("/immunization/{patient_id}")
