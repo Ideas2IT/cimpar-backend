@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Response, status, Body, Query, responses
+from fastapi import APIRouter, Request, status, Body, Query, responses
 import logging
 from typing import Optional
 from aidbox.base import API
@@ -22,25 +22,27 @@ async def convert_message(message):
     return response.json()
 
 
-async def request_wrapper(raw_data, action):
-    try:
-        parsed_data = await convert_message(raw_data.decode("utf-8"))
-        response = action(parsed_data["parsed"]["parsed"])
-        return response
-    except Exception as e:
-        response = json.dumps({'error': str(e)}).encode('utf-8')
-        logger.error("Unable to add the record: %s" % response)
-        logger.error(traceback.format_exc())
-        return Response(content=response, status_code=status.HTTP_400_BAD_REQUEST)
-
-
 @router.post("/ORU_R01")
 async def hl7v2_oru_r01(request: Request, raw_data: str =Body(..., media_type="text/plain")):
-    raw_data = await request.body()
-    logger.info("raw_data: %s" % raw_data)
-    response = await request_wrapper(raw_data, R01.run)
-    logger.info("response: %s" % response)
-    return response
+    try:
+        raw_data = await request.body()
+        logger.info("raw_data: %s" % raw_data)
+        parsed_data = await convert_message(raw_data.decode("utf-8"))
+        if not parsed_data.get("parsed", {}).get("parsed", None):
+            raise Exception("Unable to convert the HL7 message, Please provide the valid HL7 data")
+        response = R01.run(parsed_data["parsed"]["parsed"])
+        logger.info("response: %s" % response)
+        return response
+    except Exception as e:
+        logger.error(f"Error creating R01: {str(e)}")
+        logger.error(traceback.format_exc())
+        error_response_data = {
+            "error": "Unable to create Observation",
+            "details": str(e),
+        }
+        return responses.JSONResponse(
+            content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 
 @router.post("/VXU_V04")
