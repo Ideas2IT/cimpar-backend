@@ -7,16 +7,19 @@ AIDBOX_CLIENT_PASSWORD = {{PASSWORD}}
 
 # Common headers for all requests
 headers = {"Content-Type": "application/json"}
+concept_headers = {"Content-Type": "text/yaml","Accept": "text/yaml"}
 
 # Auth credentials
 auth = HTTPBasicAuth(AIDBOX_CLIENT_USERNAME, AIDBOX_CLIENT_PASSWORD)
 
 # Table creation data
 tables = [
-    #{"id": "CimparRace", "type": "resource", "isOpen": True},
+    {"id": "CimparRace", "type": "resource", "isOpen": True},
     {"id": "CimparEthnicity", "type": "resource", "isOpen": True},
     {"id": "CimparState", "type": "resource", "isOpen": True},
-    {"id": "CimparLabTest", "type": "resource", "isOpen": True}
+    {"id": "CimparLabTest", "type": "resource", "isOpen": True},
+    {"id": "CimparInsuranceCompany", "type": "resource", "isOpen": True},
+    {"id": "Concept"}
 ]
 
 # Data for each table
@@ -25,7 +28,9 @@ race_data = [
     {"code": "2028-9", "display": "Asian"},
     {"code": "2054-5", "display": "Black or African American"},
     {"code": "2076-8", "display": "Native Hawaiian or Other Pacific Islander"},
-    {"code": "2106-3", "display": "White"}
+    {"code": "2106-3", "display": "White"},
+    {"code": "2131-1", "display": "Other Race"},
+    {"code": "0", "display": "Unknown"}
 ]
 
 ethnicity_data = [
@@ -33,7 +38,9 @@ ethnicity_data = [
     {"system": "http://terminology.hl7.org/CodeSystem/v3-Ethnicity", "code": "2137-8", "display": "Spaniard"},
     {"system": "http://terminology.hl7.org/CodeSystem/v3-Ethnicity", "code": "2140-2", "display": "Castillian"},
     {"system": "http://terminology.hl7.org/CodeSystem/v3-Ethnicity", "code": "2144-4", "display": "Valencian"},
-    {"system": "http://terminology.hl7.org/CodeSystem/v3-Ethnicity", "code": "2145-1", "display": "Canarian"}
+    {"system": "http://terminology.hl7.org/CodeSystem/v3-Ethnicity", "code": "2145-1", "display": "Canarian"},
+    {"system": "http://terminology.hl7.org/CodeSystem/v3-Ethnicity", "code": "2135-2", "display": "Hispanic or Latino"},
+    {"system": "http://terminology.hl7.org/CodeSystem/v3-Ethnicity", "code": "0", "display": "Unknown"}
 ]
 
 state_data = [
@@ -90,57 +97,84 @@ state_data = [
 ]
 
 lab_test_data = [
-    {"code": "ALT", "display": "ALANINE AMINOTRANS"},
-    {"code": "ALB", "display": "ALBUMIN"},
-    {"code": "AGR", "display": "ALBUMIN GLOBULIN RATIO"},
-    {"code": "ALKP", "display": "ALKALINE PHOSPHATASE"},
-    {"code": "AMYL", "display": "AMYLASE"},
-    {"code": "AHCV", "display": "ANTI HEPATITIS C"},
-    {"code": "AST", "display": "AST"},
-    {"code": "BCR", "display": "BUN CREATININE RATIO"},
-    {"code": "CA", "display": "CALCIUM"},
-    {"code": "ECO2", "display": "CARBON DIOXIDE"},
-    {"code": "CL", "display": "CHLORIDE"},
-    {"code": "BC", "display": "CONJUGATED BILIRUBIN"},
-    {"code": "CREA", "display": "CREATININE"},
-    {"code": "DBIL", "display": "DIRECT BILIRUBIN"},
-    {"code": "DHDL", "display": "DIRECT HDLC"},
-    {"code": "FERR", "display": "FERRITIN"},
-    {"code": "FOL", "display": "FOLATE"},
-    {"code": "GFR", "display": "GLOMERULAR FILTRATION RATE"},
-    {"code": "GLU", "display": "GLUCOSE"},
-    {"code": "HIVC", "display": "HIV COMBO"},
-    {"code": "LAC", "display": "LACTATE"},
-    {"code": "LDH", "display": "LDH"},
-    {"code": "LIPA", "display": "LIPASE"},
-    {"code": "MG", "display": "MAGNESIUM"},
-    {"code": "PHOS", "display": "PHOSPHOROUS"},
-    {"code": "K", "display": "POTASSIUM"},
-    {"code": "PCT", "display": "PROCALCITONIN"},
-    {"code": "NA", "display": "SODIUM"},
-    {"code": "BHCG", "display": "TOTAL BETA HCG"},
-    {"code": "TBIL", "display": "TOTAL BILIRUBIN"},
-    {"code": "CHOL", "display": "TOTAL CHOLESTEROL"},
-    {"code": "TP", "display": "TOTAL PROTEIN"},
-    {"code": "TRIG", "display": "TRIGLYCERIDES"}
+    {'code': '49765-1', 'display': 'Calcium'},
+    {'code': '2069-3', 'display': 'Chloride'},
+    {'code': '59826-8', 'display': 'Creatinine'},
+    {'code': '2024-8', 'display': 'Carbon Dioxide'},
+    {'code': '1557-8', 'display': 'Glucose'},
+    {'code': '6298-4', 'display': 'Potassium'},
+    {'code': '2947-0', 'display': 'Sodium'},
+    {'code': '6299-2', 'display': 'Urea Nitrogen'},
+    {'code': '', 'display': 'CMP'},
+    {'code': '1751-7', 'display': 'Albumin'},
+    {'code': '42719-5', 'display': 'Total Bilirubin'},
+    {'code': '77141-0', 'display': 'Alkaline Phosphatase'},
+    {'code': '', 'display': 'Total Protein'},
+    {'code': '76625-3', 'display': 'ALT'},
+    {'code': '48136-6', 'display': 'AST'},
+    {'code': '', 'display': 'Lipid Panel'},
+    {'code': '2093-3', 'display': 'Total Cholesterol'},
+    {'code': '3043-7', 'display': 'Triglycerides'},
+    {'code': '2085-9', 'display': 'HDL-Cholesterol'},
+    {'code': '98981-4', 'display': 'Uric Acid'},
+    {'code': '4548-4', 'display': 'Hemoglobin A1C'},
+    {'code': '3015-5', 'display': 'TSH'},
+    {'code': '3024-7', 'display': 'Free T4'},
+    {'code': '20507-0', 'display': 'RPR'}, 
+    {'code': '58410-2', 'display': 'Covid'},
+    {'code': '0101U', 'display': 'Test for detection of high-risk human papillomavirus in male urine'},
+    {'code': '0240U', 'display': 'Respiratory infectious agent detection by RNA for severe acute respiratory'},
+    {'code': '0353U', 'display': 'Detection of bacteria causing vaginosis and vaginitis by multiplex amplified'},
+    {'code': '0354U', 'display': 'Detection of Chlamydia trachomatis and Neisseria gonorrhoeae by multiplex'},
+    {'code': '0372U', 'display': 'Test for 16 genitourinary bacterial organisms and 1 genitourinary fungal'},
+    {'code': "80061", 'display': 'Blood test, lipids (cholesterol and triglycerides)'},
+    {'code': "82731", 'display': 'Ferritin (blood protein) level'},
+    {'code': "82747", 'display': 'Folic acid level, serum'},
+    {'code': "83036", 'display': 'Hemoglobin A1C level'},
+    {'code': "83037", 'display': 'Hemoglobin A1C level'},
+    {'code': "85032", 'display': 'Complete blood cell count (red cells, white blood cell, platelets), automated'},
+    {'code': "86704", 'display': 'Analysis for antibody to HIV-1 and HIV-2 virus'},
+    {'code': "86707", 'display': 'Hepatitis B surface antibody measurement'},
+    {'code': "86709", 'display': 'Measurement of Hepatitis A antibody'},
+    {'code': "86710", 'display': 'Measurement of Hepatitis A antibody (IgM)'},
+    {'code': "86711", 'display': 'Analysis for antibody to Influenza virus'},
+    {'code': "86780", 'display': 'Analysis for antibody, Treponema pallidum'},
+    {'code': "86803", 'display': 'Hepatitis C antibody measurement'},
+    {'code': "87154", 'display': 'Identification of organisms by nucleic acid sequencing method'},
+    {'code': "87341", 'display': 'Detection test by immunoassay technique for Hepatitis B surface antigen'},
+    {'code': "87389", 'display': 'Detection test by immunoassay technique for HIV-1 antigen and HIV-1 and HIV-2'},
+    {'code': "87506", 'display': 'Detection test by nucleic acid for digestive tract pathogen, multiple types or'},
+    {'code': "87512", 'display': 'Detection test for gardnerella vaginalis (bacteria), amplified probe technique'},
+    {'code': "87591", 'display': 'Detection test by nucleic acid for Neisseria gonorrhoeae (gonorrhoeae'},
+    {'code': "87631", 'display': 'Detection test by nucleic acid for human papillomavirus (hpv), types 16 and 18'},
+    {'code': "87631", 'display': 'Detection test by nucleic acid for multiple types of respiratory virus,'},
+    {'code': "87634", 'display': 'Detection test by nucleic acid for respiratory syncytial virus, amplified probe'},
+    {'code': "87635", 'display': 'Amplifed DNA or RNA probe detection of severe acute respiratory syndrome'}
 ]
 
 insurance_company_data = [
-    {"name": "AAA Insurance Company", "code": "11983"},
-    {"name": "Allstate Insurance", "code": "19232"},
-    {"name": "Direct Auto Insurance", "code": "20133"},
-    {"name": "Geico Insurance", "code": "35882"},
-    {"name": "Liberty Mutual Insurance", "code": "23043"},
-    {"name": "Progressive Insurance", "code": "24260"},
-    {"name": "State Farm Insurance", "code": "25178"},
-    {"name": "The General Insurance", "code": "13703"},
-    {"name": "Travelers Insurance", "code": "25658"},
-    {"name": "USAA Insurance", "code": "186000"},
+    {"display": "AAA Insurance Company", "code": "11983"},
+    {"display": "Allstate Insurance", "code": "19232"},
+    {"display": "Direct Auto Insurance", "code": "20133"},
+    {"display": "Geico Insurance", "code": "35882"},
+    {"display": "Liberty Mutual Insurance", "code": "23043"},
+    {"display": "Progressive Insurance", "code": "24260"},
+    {"display": "State Farm Insurance", "code": "25178"},
+    {"display": "The General Insurance", "code": "13703"},
+    {"display": "Travelers Insurance", "code": "25658"},
+    {"display": "USAA Insurance", "code": "186000"},
+]
+
+concept_data = [
+    {
+        "icd10": "https://storage.googleapis.com/ftr/icd10cm/vs/http%3A--hl7.org-fhir-ValueSet-icd-10/tf.5e7b9e0dc05aace8f1a3c8b086556438b0b87848c9304fe9999d8b237e67a8ee.ndjson.gz",
+        "rxnorm": "https://storage.googleapis.com/ftr/rxnorm/vs/http%3A--www.nlm.nih.gov-research-umls-rxnorm-valueset/tf.c32766ceb2ec7285a85529d18286565711c506e0cec5de6cfbe3f8ab5192a1bc.ndjson.gz",
+        "snomed": "https://storage.googleapis.com/ftr/snomed/vs/http%3A--snomed.info-sct/tf.3534d92087b0acc5c88cd1ef10e38c5758073f4b5fd217bcce679b37aff5a86.ndjson.gz"
+    }
 ]
 
 # Create tables and populate them with data
 for table in tables:
-    # Create table
     table_creation_response = requests.put(
         f"{AIDBOX_URL}/admin/{table['id']}",
         headers=headers,
@@ -160,14 +194,29 @@ for table in tables:
         data_list = lab_test_data
     elif table['id'] == "CimparInsuranceCompany":
         data_list = insurance_company_data
+    elif table["id"] == "Concept":
+        data_list = concept_data
 
-    for data in data_list:
-        entry_creation_response = requests.post(
-            f"{AIDBOX_URL}/{table['id']}",
-            headers=headers,
-            auth=auth,
-            json=data
-        )
+    if table["id"] == "Concept":
+        concept_headers = headers.copy()
+        concept_headers["Content-Type"] = "text/yaml"
+        concept_headers["Accept"] = "text/yaml"
+
+        for url in concept_data[0].values():
+            entry_creation_response = requests.post(
+                f"{AIDBOX_URL}/terminology/$import",
+                headers=concept_headers,
+                auth=auth,
+                json={"url": url}
+            )
+    else:
+        for data in data_list:
+            entry_creation_response = requests.post(
+                f"{AIDBOX_URL}/{table['id']}",
+                headers=headers,
+                auth=auth,
+                json=data
+            )
         print(f"Adding data to {table['id']} - Status code: {entry_creation_response.status_code}")
 
 print("Script execution completed.")
