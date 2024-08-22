@@ -45,7 +45,6 @@ async def get_appointment(
 
 
 @router.put("/appointment/{appointment_id}")
-@permission_required("APPOINTMENT", "UPDATE")
 async def update_lab_status(appointment_id: str, update_status: StatusModel, request: Request):
     logger.info(f"Appointment ID:{appointment_id}")
     return AppointmentClient.update_appointment_status(appointment_id, update_status)

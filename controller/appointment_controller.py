@@ -7,8 +7,9 @@ from fastapi.responses import JSONResponse
 
 from aidbox.base import CodeableConcept, Reference, Coding, Annotation
 from aidbox.resource.appointment import Appointment_Participant
-from models.appointment_validation import StatusModel
+from aidbox.resource.appointment import Appointment as AppointmentWrapper
 
+from models.appointment_validation import StatusModel
 from constants import (
     PATIENT_REFERENCE,  
     APPOINTMENT_STATUS, 
@@ -754,14 +755,14 @@ class AppointmentClient:
     @staticmethod
     def update_appointment_status(appointment_id: str, update_status: StatusModel):
         try:
-            appointment_result = Appointment.make_request(method="GET", endpoint=f"/fhir/Appointment/{appointment_id}")
+            appointment_result = AppointmentWrapper.make_request(method="GET", endpoint=f"/fhir/Appointment/{appointment_id}")
             appointment_json = appointment_result.json()
             if appointment_result.status_code == 404:
                 return JSONResponse(
                     content={"error": "No Matching Record"},
                     status_code=status.HTTP_404_NOT_FOUND
                 )
-            data = Appointment(**appointment_json)
+            data = AppointmentWrapper(**appointment_json)
             data.comment = update_status.status
             data.save()
             response_data = {"id": data.id, "status": data.comment}
