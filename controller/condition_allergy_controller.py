@@ -451,7 +451,7 @@ class ConditionClient:
         try:
             allergy_list = AidboxApi.make_request(
                 method="GET",
-                endpoint=f"/Concept?.definition$contains={allergy_name}&system=http://hl7.org/fhir/sid/icd-10",
+                endpoint=f"/Concept?.display$contains={allergy_name}&system=http://hl7.org/fhir/sid/icd-10",
             )
             logger.info(f"Allergy List: {allergy_list}")
             data = allergy_list.json()
