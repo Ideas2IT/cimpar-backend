@@ -33,42 +33,11 @@ def run(message):
             }
         )
         
-    if visit_data:
-        locations, practitioners, encounter = prepare_encounters(visit_data, patient=patient)
-        for location in locations:
-            location_url = 'Location'
-            if Location.get({"id": location.id}):
-                location_url += f"/{location.id}"
-            entry.append(
-                {
-                    "resource": location.dumps(exclude_unset=True, exclude_none=True),
-                    "request": {"method": "PUT", "url": location_url},
-                }
-            )
-
-        for practitioner in practitioners:
-            practitioners_url = 'Practitioner'
-            if Practitioner.get({"id": practitioner.id}):
-                practitioners_url += f"/{practitioner.id}"
-            entry.append(
-                {
-                    "resource": practitioner.dumps(exclude_unset=True, exclude_none=True),
-                    "request": {"method": "PUT", "url": practitioners_url},
-                }
-            )
-
-        entry.append(
-            {
-                "resource": encounter.dumps(exclude_unset=True, exclude_none=True),
-                "request": {"method": "PUT", "url": "Encounter"},
-            }
-        )
-        
     if specimens:
         for specimen in message.get("specimens", []):
             for observation_data in specimen.get("observations", []):
                 observation, organizations, practitioner_roles = prepare_observation(observation_data, patient, parent=None,
-                                                                                 specimen=None, encounter=None)
+                                                                                 specimen=None)
                 entry.append({
                         "resource": observation.dumps(exclude_unset=True, exclude_none=True),
                         "request": {"method": "PUT", "url": "Observation/" + observation.id}
@@ -79,7 +48,6 @@ def run(message):
         if "order" in order_data:
             main_diagnostic_report, practitioner_roles, observations = prepare_diagnostic_report(order_data["order"],
                                                                                                  patient,
-                                                                                                 encounter=None,
                                                                                                  parent=None)
 
             for practitioner_role in practitioner_roles:
@@ -101,7 +69,7 @@ def run(message):
 
         for observation_data in order_data.get("observations", []):
             observation, organizations, practitioner_roles = prepare_observation(observation_data, patient, parent=None,
-                                                                                 specimen=None, encounter=None)
+                                                                                 specimen=None)
 
             entry.append({
                 "resource": observation.dumps(exclude_unset=True, exclude_none=True),
@@ -123,7 +91,6 @@ def run(message):
         for observation_request_data in order_data.get("observation_requests", []):
             diagnostic_report, practitioner_roles, observations = prepare_diagnostic_report(observation_request_data,
                                                                                             patient,
-                                                                                            encounter=encounter,
                                                                                             parent=main_diagnostic_report)
 
             for practitioner_role in practitioner_roles:
@@ -141,8 +108,7 @@ def run(message):
 
             for observation_data in observation_request_data.get("observations", []):
                 observation, organizations, practitioner_roles = prepare_observation(observation_data, patient,
-                                                                                     parent=None, specimen=None,
-                                                                                     encounter=encounter)
+                                                                                     parent=None, specimen=None)
                 if diagnostic_report.result:
                     diagnostic_report.result.append(Reference(reference="Observation/" + observation.id))
                 else:
