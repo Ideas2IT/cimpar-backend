@@ -30,4 +30,5 @@ class AppoinmentModel(BaseModel):
 
 
 class StatusModel(BaseModel):
+    patient_id: str
     status: Literal['available']
