@@ -45,7 +45,7 @@ async def get_appointment(
 
 
 @router.put("/appointment/{appointment_id}")
-async def update_lab_status(appointment_id: str, update_status: StatusModel, request: Request):
+async def update_lab_status(update_status: StatusModel, appointment_id: str):
     logger.info(f"Appointment ID:{appointment_id}")
-    return AppointmentClient.update_appointment_status(appointment_id, update_status)
+    return AppointmentClient.update_appointment_status(update_status, appointment_id)
 
