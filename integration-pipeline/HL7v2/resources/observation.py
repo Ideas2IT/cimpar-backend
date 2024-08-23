@@ -83,7 +83,7 @@ def get_status(status):
 
 
 def prepare_observation(
-    data, patient: Patient, parent: Optional[Union[Observation, ServiceRequest]], specimen: Specimen, encounter: Encounter
+    data, patient: Patient, parent: Optional[Union[Observation, ServiceRequest]], specimen: Specimen
 ):
     organizations: list[Organization] = []
     practitioner_roles: list[PractitionerRole] = []
@@ -207,9 +207,6 @@ def prepare_observation(
 
     if specimen is not None:
         observation.focus = [Reference(reference="Specimen/" + specimen.id)]
-
-    if encounter is not None:
-        observation.encounter = Reference(reference="Encounter/" + encounter.id)
 
     if 'value' in data and 'type' in data['value'] and data['value']['type'] == "ED":
         file_format = data['value']['ED'][0]['data_subtype']
