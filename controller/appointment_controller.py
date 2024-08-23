@@ -753,30 +753,45 @@ class AppointmentClient:
         return final_response
 
     @staticmethod
-    def update_appointment_status(appointment_id: str, update_status: StatusModel):
+    def update_appointment_status(update_status: StatusModel, appointment_id: str):
         try:
-            appointment_result = AppointmentWrapper.make_request(method="GET", endpoint=f"/fhir/Appointment/{appointment_id}")
-            appointment_json = appointment_result.json()
+            appointment_result = AppointmentWrapper.make_request(method="GET", endpoint=f"/fhir/Appointment?.participant.0.actor.id={update_status.patient_id}")
             if appointment_result.status_code == 404:
+                logger.warning(f"No matching record for patient ID {update_status.patient_id}")
                 return JSONResponse(
                     content={"error": "No Matching Record"},
                     status_code=status.HTTP_404_NOT_FOUND
                 )
-            data = AppointmentWrapper(**appointment_json)
-            data.comment = update_status.status
-            data.save()
-            response_data = {"id": data.id, "status": data.comment}
-            logger.info(f"Updated Successfully in DB: {response_data}")
-            return response_data
+            appointment_json = appointment_result.json()
+            match_found = False
+            for entry in appointment_json.get("entry", []):
+                resource = entry.get("resource", {})
+                if resource.get("id") == appointment_id:
+                    match_found = True
+                    data = AppointmentWrapper(**resource)
+                    data.comment = update_status.status
+                    data.save()
+                    response_data = {"id": data.id, "status": data.comment}
+                    logger.info(f"Updated Successfully in DB: {response_data}")
+                    return JSONResponse(
+                        content=response_data,
+                        status_code=status.HTTP_200_OK
+                    )
+            if not match_found:
+                logger.warning(f"No appointment matched with the patient ID {update_status.patient_id} and appointment ID {appointment_id}")
+                return JSONResponse(
+                    content={"error": "No appointment matched with the patient. Please check the payload."},
+                    status_code=status.HTTP_404_NOT_FOUND
+                )
+
         except Exception as e:
-            logger.error(f"Error retrieving Lab Result: {str(e)}")
+            logger.error(f"General error while retrieving Appointment for patient ID {patient_id}: {str(e)}")
             logger.error(traceback.format_exc())
             error_response_data = {
-                "error": "Unable to retrieve Lab Result",
+                "error": "Unable to retrieve Appointment",
                 "details": str(e),
             }
             return JSONResponse(
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
-
