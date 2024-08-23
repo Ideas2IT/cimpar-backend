@@ -33,7 +33,7 @@ def get_status(code):
         case _:
             return "unknown"
 
-def prepare_diagnostic_report(data, patient: Patient, encounter: Encounter, parent: DiagnosticReport) -> (DiagnosticReport, list[PractitionerRole]):
+def prepare_diagnostic_report(data, patient: Patient, parent: DiagnosticReport) -> (DiagnosticReport, list[PractitionerRole]):
     practitioner_roles: list[PractitionerRole] = []
     observations: list[Observation] = []
 
@@ -126,6 +126,6 @@ def prepare_diagnostic_report(data, patient: Patient, encounter: Encounter, pare
 
             if "observations" in specimen_data:
                 for observation_data in specimen_data.get("observations"):
-                    observations.append(prepare_observation(observation_data, patient=patient, parent=None, specimen=specimen, encounter=encounter)[0])
+                    observations.append(prepare_observation(observation_data, patient=patient, parent=None, specimen=specimen)[0])
 
     return (diagnostic_report, practitioner_roles, observations)
