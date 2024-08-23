@@ -33,10 +33,10 @@ class AuthClient:
                 raise Exception("User Already Exist %s" % user.email)
             if len(cimpar_role) < 0:
                 raise Exception("Unable to fetch the roles.")
-            user_existing = API.make_request(method="GET", endpoint=f"/User/?.email={user.email}")
+            user_existing = API.make_request(method="GET", endpoint=f"/User/?.email={user.email.lower()}")
             if user_existing.json()["total"] != 0:
                 raise Exception("Given User Already Exist %s" % user.email)
-            create_user = User(id=user_id, email=user.email, inactive=True)
+            create_user = User(id=user_id, email=user.email.lower(), inactive=True)
             create_user.save()
             # Create Permission
             role_response = CimparPermission(
@@ -225,7 +225,7 @@ class AuthClient:
     def reset_password(email):
         try:
             # Verify if the user exists
-            user = API.make_request(method="GET", endpoint=f"/User/?.email={email}")
+            user = API.make_request(method="GET", endpoint=f"/User/?.email={email.lower()}")
             if user.json()["total"] == 0:
                 raise Exception("User not found")
             user_json = user.json()["entry"][0]["resource"]
