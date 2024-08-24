@@ -5,7 +5,9 @@ import traceback
 
 from services.aidbox_service import AidboxApi
 from controller.appointment_controller import AppointmentClient
-from constants import UPCOMING_APPOINTMENT
+from constants import UPCOMING_APPOINTMENT, CONTAINER_NAME
+from utils.common_utils import azure_file_handler
+
 logger = logging.getLogger("log")
 
 
@@ -209,15 +211,26 @@ class ServiceHistoryClient:
         )
         count_resp = count_res.json()
         total_count = count_resp["data"][0]["count"]
-        formatted_data = [
-            {
+
+        formatted_data = []
+
+        for item in data.get('data', []):
+            formatted_item = {
                 "resource": {
                     "id": item["id"],
                     "record_type": item["record_type"],
                     **item["resource"]
                 }
-            } for item in data.get('data', [])
-        ]
+            }
+            if item["record_type"].lower()  == "observation":
+                file_url = azure_file_handler(
+                    container_name=CONTAINER_NAME,
+                    blob_name=f"{patient_id}/{item['id']}",
+                    fetch=True
+                )
+                formatted_item["resource"]["file_url"] = file_url if file_url else False
+            formatted_data.append(formatted_item)
+
         final_response = {
             "data": formatted_data,
             "pagination": {
