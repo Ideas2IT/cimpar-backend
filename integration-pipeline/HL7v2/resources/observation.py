@@ -56,7 +56,7 @@ def get_codes(data):
             codes.append(Coding(
                 code = data.get("code", None),
                 system = data.get("system", None),
-                display = data.get("display", None),
+                display = data.get("display", "Observation"),
                 version = data.get("version_id", None)
             ))
 
@@ -64,7 +64,7 @@ def get_codes(data):
         codes.append(Coding(
             code = data.get("alternate_code", None),
             system = data.get("alternate_system", None),
-            display = data.get("alternate_display", None),
+            display = data.get("alternate_display", "Observation"),
         ))
 
     return codes
