@@ -53,9 +53,8 @@ GENDER_MAPPING = {
 }
 INSURANCE_CONTAINER = "cimparinsurancedatadev"
 VISIT_HISTORY_CONTAINER = "cimparvisithistorydatadev"
-FILE_SIZE = 5.2
+FILE_SIZE = 6.00
 FILE_ETL_HOUR = 1
 DELETED = 'deleted'
-
 CONTAINER_NAME = "cimparlabtestdocdev"
 
