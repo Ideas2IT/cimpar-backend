@@ -31,7 +31,7 @@ def validate_zip_code(zip_code: str) -> str:
 
 
 def validate_name(name: str) -> str:
-    if name and not re.match(r'^[A-Za-z]+$', name):
+    if name and not re.match(r'^[A-Za-z\s]+$', name):
         raise ValueError('Name must contain alphabetic characters and spaces alone')
     return name
 
