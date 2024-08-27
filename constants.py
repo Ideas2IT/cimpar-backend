@@ -57,4 +57,6 @@ FILE_SIZE = 6.00
 FILE_ETL_HOUR = 1
 DELETED = 'deleted'
 CONTAINER_NAME = "cimparlabtestdocdev"
-
+CONDITION_APP_SYSTEM = "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification"
+APPOINTMENT_CODE = "confirmed"
+ALLERGY_APP_SYSTEM = "http://terminology.hl7.org/CodeSystem/condition-verification"
