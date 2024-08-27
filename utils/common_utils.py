@@ -99,7 +99,7 @@ def permission_required(resource: str, action: str):
             request: Request = kwargs.get("request")
             auth_token = request.headers.get("Authorization")
             if not auth_token:
-                raise HTTPException(status_code=403, detail="Authentication token is Mandatory")
+                raise HTTPException(status_code=401, detail="Authentication token is Mandatory")
             bearer_token.set(auth_token.split("Bearer ")[1])
             payload = decode_jwt_without_verification(auth_token)
             user_id = payload.get("sub")

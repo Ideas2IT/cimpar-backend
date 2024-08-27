@@ -19,7 +19,10 @@ from constants import (
     APPOINTMENT_SYSTEM,
     UPCOMING_APPOINTMENT,
     START_DATE,
-    END_DATE
+    END_DATE,
+    CONDITION_APP_SYSTEM,
+    APPOINTMENT_CODE, 
+    ALLERGY_APP_SYSTEM
 )
 from services.aidbox_resource_wrapper import Appointment
 from models.appointment_validation import AppoinmentModel
@@ -122,6 +125,9 @@ class AppointmentClient:
                 )
                 current_condition.save()
                 response_data["current_condition_id"] = current_condition.id
+
+                current_condition_app_data = AppointmentClient.create_condition_app(appointment.id, patient_id, app.current_medical_condition, CURRENT)
+                response_data["current_condition_app_id"] = current_condition_app_data
             else:
                 if app.current_medical_condition and condition_response.get('is_current_condition_exist') == False:
                     current_condition = Condition(
@@ -142,6 +148,9 @@ class AppointmentClient:
                     response_data["current_condition_id"] = current_condition.id
                     response_data["current_condition"] = "Created"
 
+                    current_condition_app_data = AppointmentClient.create_condition_app(appointment.id, patient_id, app.current_medical_condition, CURRENT)
+                    response_data["current_condition_app_id"] =  current_condition_app_data                 
+
             if app.other_medical_condition and app.other_condition_id:
                 additional_condition = Condition(
                     id=app.other_condition_id,
@@ -160,6 +169,9 @@ class AppointmentClient:
                 )
                 additional_condition.save()
                 response_data["other_condition_id"] = additional_condition.id
+
+                additional_condition_app_data = AppointmentClient.create_condition_app(appointment.id, patient_id, app.other_medical_condition, OTHER)
+                response_data["other_condition_app_id"] = additional_condition_app_data
             else:
                 if app.other_medical_condition and condition_response.get('is_other_condition_exist') == False:
                     additional_condition = Condition(
@@ -180,6 +192,9 @@ class AppointmentClient:
                     response_data["other_condition_id"] = additional_condition.id
                     response_data["other_condition"] = "Created"
 
+                    additional_condition_app_data = AppointmentClient.create_condition_app(appointment.id, patient_id, app.other_medical_condition, OTHER)
+                    response_data["other_condition_app_id"] = additional_condition_app_data
+
             if app.current_allergy and app.current_allergy_id:
                 current_allergy = AllergyIntolerance(
                     id=app.current_allergy_id,
@@ -197,7 +212,10 @@ class AppointmentClient:
                     note=[Annotation(text=CURRENT)],
                 )
                 current_allergy.save()
-                response_data["current_allergy"] = current_allergy.id
+                response_data["current_allergy_id"] = current_allergy.id
+
+                current_allergy_app_data = AppointmentClient.create_allergy_app(appointment.id, patient_id, app.current_allergy, CURRENT)
+                response_data["current_allergy_app_id"] = current_allergy_app_data
             else:
                 if app.current_allergy and allergy_response.get("is_current_allergy_exist") == False:
                     current_allergy = AllergyIntolerance(
@@ -218,6 +236,9 @@ class AppointmentClient:
                     response_data["current_allergy_id"] = current_allergy.id
                     response_data["current_allergy"] = "Created"
 
+                    current_allergy_app_data = AppointmentClient.create_allergy_app(appointment.id, patient_id, app.current_allergy, CURRENT)
+                    response_data["current_allergy_app_id"] = current_allergy_app_data
+
             if app.other_allergy and app.other_allergy_id:
                 additional_allergy = AllergyIntolerance(
                     id=app.other_allergy_id,
@@ -236,6 +257,9 @@ class AppointmentClient:
                 )
                 additional_allergy.save()
                 response_data["other_allergy"] = additional_allergy.id
+
+                other_allergy_app_data = AppointmentClient.create_allergy_app(appointment.id, patient_id, app.other_allergy, OTHER)
+                response_data["other_allergy_app_id"] = other_allergy_app_data
             else:
                 if app.other_allergy and allergy_response.get("is_other_allergy_exist") == False:
                     additional_allergy = AllergyIntolerance(
@@ -255,6 +279,9 @@ class AppointmentClient:
                     additional_allergy.save()
                     response_data["other_allergy_id"] = additional_allergy.id
                     response_data["other_allergy"] = "Created"
+
+                    other_allergy_app_data = AppointmentClient.create_allergy_app(appointment.id, patient_id, app.current_allergy, OTHER)
+                    response_data["other_allergy_app_id"] = other_allergy_app_data
             response_data["created"] = True
             logger.info(f"Added Successfully in DB: {response_data}")
             return response_data
@@ -340,8 +367,8 @@ class AppointmentClient:
             )
             if appointment.status_code == 200:
                 appointment_detail = appointment.json()
-                condition_allergy_resource = ConditionClient.get_condition_by_patient_id(patient_id)
-                extracted_conditions = AppointmentClient.process_conditions_and_allergies(condition_allergy_resource)
+                condition_allergy_resource = ConditionClient.get_by_patient_id(patient_id)
+                extracted_conditions = AppointmentClient.process_conditions_and_allergies(condition_allergy_resource, appointment_id)
                 insurance_detail = CoverageClient.get_insurance_detail(patient_id)
                 participant_reference = appointment_detail.get("participant", [{}])[0].get("actor", {}).get("reference", "")
                 patient_id_extracted = participant_reference.split('/')[1] if participant_reference else ""
@@ -671,7 +698,7 @@ class AppointmentClient:
         return patient_service
 
     @staticmethod
-    def process_conditions_and_allergies(data):
+    def process_conditions_and_allergies(data, appointment_id):
         result = {
             "allergies": [],
             "conditions": []
@@ -680,13 +707,15 @@ class AppointmentClient:
         def process_entries(entries, resource_type):
             for entry in entries:
                 resource = entry.get("resource", {})
+                verification_status = resource.get("verificationStatus", {})
+                verification_text = verification_status.get("text", "")
+                if verification_text != appointment_id:
+                    continue
                 notes = resource.get("note", [])
                 code_display = [coding.get("display") for coding in resource.get("code", {}).get("coding", [])]
                 resource_id = resource.get("id")
-
                 patient_reference = resource.get("patient", {}).get("reference", "") or resource.get("subject", {}).get("reference", "")
                 patient_id = patient_reference.split("/")[-1] if patient_reference else ""
-                
                 for note in notes:
                     note_text = note.get("text", "")
                     if resource_type == "AllergyIntolerance":
@@ -703,14 +732,13 @@ class AppointmentClient:
                             "resource_id": resource_id,
                             "patient_id": patient_id
                         })
-
         for bundle in data:
             if bundle.get("resourceType") == "Bundle":
                 for entry in bundle.get("entry", []):
                     resource_type = entry.get("resource", {}).get("resourceType")
                     process_entries([entry], resource_type)
-        
         return result
+
 
     @staticmethod
     def custom_query_with_pagination(query_name: str, patient_name, start_date, end_date, service_name, page, page_size):
@@ -785,7 +813,7 @@ class AppointmentClient:
                 )
 
         except Exception as e:
-            logger.error(f"General error while retrieving Appointment for patient ID {patient_id}: {str(e)}")
+            logger.error(f"General error while retrieving Appointment for patient ID {update_status.patient_id}: {str(e)}")
             logger.error(traceback.format_exc())
             error_response_data = {
                 "error": "Unable to retrieve Appointment",
@@ -795,3 +823,51 @@ class AppointmentClient:
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
+
+
+    @staticmethod
+    def create_allergy_app(appointment_id, patient_id, allergy, values):
+        allergy_instance = AllergyIntolerance(
+            code=CodeableConcept(
+                coding=[
+                    Coding(
+                        system=concept.system,
+                        code=concept.code,
+                        display=concept.display,
+                    )
+                    for concept in allergy
+                ]
+            ),
+            patient=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+            note=[Annotation(text=values)],
+            verificationStatus=CodeableConcept(
+                coding=[Coding(system=ALLERGY_APP_SYSTEM, code=APPOINTMENT_CODE)],
+                text=appointment_id
+            )
+        )
+        allergy_instance.save()
+        return allergy_instance.id
+
+    
+    @staticmethod
+    def create_condition_app(appointment_id, patient_id, condition, values):
+        condition_instance = Condition(
+            code=CodeableConcept(
+                coding=[
+                    Coding(
+                        system=concept.system,
+                        code=concept.code,
+                        display=concept.display,
+                    )
+                    for concept in condition
+                ]
+            ),
+            subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
+            note=[Annotation(text=values)],
+            verificationStatus=CodeableConcept(
+                coding=[Coding(system=CONDITION_APP_SYSTEM, code=APPOINTMENT_CODE)],
+                text=appointment_id
+            )
+        )
+        condition_instance.save()
+        return condition_instance.id

@@ -170,7 +170,9 @@ class ConditionClient:
             if response_condition.json().get('total', 0) == 0 and response_allergy.json().get('total', 0) == 0:
                 logger.info(f"No condition and allergy found for patient: {patient_id}")
                 return []
-            return [response_condition.json(), response_allergy.json()]
+            filtered_conditions = ConditionClient.filter_entries_without_verification(response_condition.json())
+            filtered_allergies = ConditionClient.filter_entries_without_verification(response_allergy.json())
+            return [filtered_conditions, filtered_allergies]
 
         except Exception as e:
             logger.error(f"Error getting condition: {str(e)}")
@@ -492,17 +494,18 @@ class ConditionClient:
                 resource_id = entry["resource"].get("id", "")
                 resource = entry["resource"]
                 notes = entry["resource"].get("note", [])
+                verification_status = entry["resource"].get("verificationStatus", {})
                 if notes:
                     note_text = notes[0].get("text", "")
-                    if note_text == "Current":
+                    if note_text == "Current" and not verification_status:
                         result["is_current_condition_exist"] = True
                         result['current_id'] = resource_id
                         result['is_current_resource'] = resource
-                    elif note_text == "Other":
+                    elif note_text == "Other" and not verification_status:
                         result["is_other_condition_exist"] = True
                         result['other_id'] = resource_id
                         result['is_other_resource'] = resource
-                    elif note_text == "Family":
+                    elif note_text == "Family" and not verification_status:
                         result["is_family_condition_exist"] = True
                         result['family_id'] = resource_id
                         result['is_family_resource'] = resource
@@ -518,12 +521,58 @@ class ConditionClient:
             for entry in allergy_data.get("entry", []):
                 resource = entry["resource"]
                 notes = entry["resource"].get("note", [])
+                verification_status = entry["resource"].get("verificationStatus", {})
                 if notes:
                     note_text = notes[0].get("text", "")
-                    if note_text == "Current":
+                    if note_text == "Current" and not verification_status:
                         result["is_current_allergy_exist"] = True
                         result['is_current_resource'] = resource
-                    elif note_text == "Other":
+                    elif note_text == "Other" and not verification_status:
                         result["is_other_allergy_exist"] = True
                         result['is_other_resource'] = resource
         return result
+    
+    @staticmethod
+    def filter_entries_without_verification(data):
+        if data.get("resourceType") == "Bundle":
+            filtered_bundle = {
+                "resourceType": data["resourceType"],
+                "type": data["type"],
+                "meta": data["meta"],
+                "total": 0,
+                "link": data["link"],
+                "entry": []
+            }
+            for entry in data.get("entry", []):
+                resource = entry.get("resource", {})
+                if "verificationStatus" not in resource:
+                    filtered_bundle["entry"].append(entry)
+            filtered_bundle["total"] = len(filtered_bundle["entry"])
+        return filtered_bundle
+    
+    @staticmethod
+    def get_by_patient_id(patient_id: str):
+        try:
+            response_condition = Condition.make_request(
+                method="GET", endpoint=f"/fhir/Condition/?subject=Patient/{patient_id}&_sort=-lastUpdated"
+            )
+            response_allergy = AllergyIntolerance.make_request(
+                method="GET",
+                endpoint=f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}&_sort=-lastUpdated",
+            )
+            if response_condition.json().get('total', 0) == 0 and response_allergy.json().get('total', 0) == 0:
+                logger.info(f"No condition and allergy found for patient: {patient_id}")
+                return []
+            return [response_condition.json(), response_allergy.json()]
+
+        except Exception as e:
+            logger.error(f"Error getting condition: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to retrieve Allergy and Condition",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data, status_code=status.HTTP_400_BAD_REQUEST
+            )
