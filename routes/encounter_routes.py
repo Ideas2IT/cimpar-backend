@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import Optional, List
-from fastapi import APIRouter, Request, Query, Form, UploadFile, File, status
+from fastapi import APIRouter, Request, Query, Form, UploadFile, status
 
 from starlette.responses import JSONResponse
 
@@ -14,7 +14,6 @@ from utils.common_utils import (
     get_file_extension,
     azure_file_handler,
     generate_random_number,
-    delete_file_azure
 )
 
 router = APIRouter()
@@ -71,8 +70,9 @@ async def create_encounter(
                                               blob_data=file_data)
                 response["file_url"].append(blob_url)
     logger.info(f"Response Payload: {response}")
-    return response
-
+    return JSONResponse(
+        content=response, status_code=status.HTTP_200_OK
+    )
 
 @router.get("/encounter/{patient_id}")
 @permission_required("ENCOUNTER", "READ")
