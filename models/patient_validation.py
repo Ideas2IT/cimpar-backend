@@ -71,7 +71,7 @@ class PatientModel(BaseModel):
     haveInsurance: bool
     isPrimaryMember: Optional[bool] = None
     primaryMemberName: Optional[str] = None
-    primaryMemberDob: Optional[datetime] = None
+    primaryMemberDob: Optional[str] = None
     haveSecondaryInsurance: Optional[bool] = None
     secondaryInsuranceDetails: Optional[InsuranceDetail] = None
     insuranceDetails: Optional[InsuranceDetail] = None
@@ -112,7 +112,7 @@ class PatientModel(BaseModel):
     def validate_zip_code(cls, value):
         return validate_zip_code(value)
 
-    @field_validator('dob')
+    @field_validator('dob', 'primaryMemberDob')
     def validate_date_of_birth(cls, value):
         return validate_date_of_birth(value)
 
