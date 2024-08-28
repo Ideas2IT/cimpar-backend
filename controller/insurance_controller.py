@@ -363,7 +363,7 @@ class CoverageClient:
     def create_primary_insurance(primary_insurance, coverage: PatientModel, patient_id: str):
         insurance_status = "active" if coverage.haveInsurance else "draft"
         dependent_value = "Yes" if coverage.haveInsurance else "No"
-        primary_dob = "active" if coverage.primaryMemberDob == 0 else ""
+        primary_dob = coverage.primaryMemberDob if coverage.primaryMemberDob else ""
         return primary_insurance(
                 status=insurance_status,
                 beneficiary=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
