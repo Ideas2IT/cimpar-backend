@@ -5,14 +5,22 @@ from fastapi.responses import JSONResponse
 
 from aidbox.base import Reference, CodeableConcept, Coding
 from aidbox.resource.coverage import Coverage_Class
+from aidbox.resource.coverage import Coverage as CoverageWrapper
 
-from constants import GROUP_SYSTEM, GROUP_CODE, PATIENT_REFERENCE, PRIMARY_STATUS, SECONDARY_STATUS, ACTIVE, \
-    TERITORY_STATUS, INSURANCE_CONTAINER, DELETED
+from constants import (
+    GROUP_SYSTEM, 
+    GROUP_CODE, 
+    PATIENT_REFERENCE, 
+    PRIMARY_STATUS, 
+    SECONDARY_STATUS, 
+    ACTIVE,
+    TERITORY_STATUS, 
+    INSURANCE_CONTAINER, 
+    DELETED
+)
 from services.aidbox_resource_wrapper import Coverage 
 from models.insurance_validation import CoverageModel
 from models.patient_validation import PatientModel 
-from aidbox.resource.coverage import Coverage as CoverageWrapper
-
 from utils.common_utils import azure_file_handler, delete_file_azure
 
 logger = logging.getLogger("log")
@@ -26,13 +34,8 @@ class CoverageClient:
             primary_insurance = CoverageWrapper if from_patient else Coverage
             secondary_insurance = CoverageWrapper if from_patient else Coverage
             if from_patient:
-                response_coverage = CoverageWrapper.make_request(method="GET", endpoint=f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
-                existing_coverages = response_coverage.json() if response_coverage else {}
-                insurance_id = CoverageClient.get_insurance_ids(existing_coverages)
-                for id, insurance_id in insurance_id.items():
-                    if insurance_id is not None:
-                        CoverageClient.delete_by_insurance_id(insurance_id, patient_id, from_patient)
-                    logger.info(f"Coverage Not Found: {patient_id}")
+                existing_coverage = CoverageClient.delete_existing_coverages(patient_id)
+                logger.info(f"coverages: {existing_coverage}")
                 if coverage.haveInsurance:
                     primary_insurance_plan = CoverageClient.create_primary_insurance(primary_insurance, coverage, patient_id)
                     primary_insurance_plan.save()
@@ -514,3 +517,14 @@ class CoverageClient:
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
+
+    @staticmethod
+    def delete_existing_coverages(patient_id: str):
+        response_coverage = CoverageWrapper.make_request(method="GET", endpoint=f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
+        existing_coverages = response_coverage.json() if response_coverage else {}
+        if existing_coverages.get("total", 0) > 0:
+            insurance_ids = CoverageClient.get_insurance_ids(existing_coverages)
+            for id, insurance_id in insurance_ids.items():
+                if insurance_id is not None:
+                    CoverageClient.delete_by_insurance_id(insurance_id, patient_id, from_patient=True)
+                logger.info(f"Coverage Not Found: {patient_id}")
