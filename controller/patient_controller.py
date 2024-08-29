@@ -1,7 +1,7 @@
 import json
 import logging
 import traceback
-from fastapi import Response, status, HTTPException
+from fastapi import Response, status
 from fastapi.responses import JSONResponse
 
 from aidbox.base import HumanName, Address, ContactPoint, Extension, Coding, Meta, Identifier, CodeableConcept
@@ -56,6 +56,9 @@ class PatientClient:
                 patient_update = PatientClient.update_patient_by_id(pat, patient_id_update, from_patient=True)
                 result_data["id"] = patient_update.get("id")
                 coverage_values = {}
+                if not pat.haveInsurance:
+                    existing_coverages = CoverageClient.delete_existing_coverages(patient_id_update)
+                    logger.info(f"Coverage deleted: {existing_coverages}")
                 if pat.haveInsurance:
                     try:
                         coverage_values = CoverageClient.create_coverage(pat, patient_id_update, from_patient=True)

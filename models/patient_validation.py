@@ -17,6 +17,16 @@ def validate_date_of_birth(timestamp):
         raise ValueError('Invalid DOB %s' % timestamp)
     return utc_dt
 
+def validate_primary_dob(timestamp):
+    try:
+        if timestamp:
+            dob_dt = datetime.strptime(timestamp, '%m/%d/%Y')
+            utc_dt = dob_dt.strftime('%Y-%m-%d')
+            return utc_dt
+    except ValueError as e:
+        logging.info(f"Error: {e}")
+        raise ValueError('Invalid Primary DOB %s' % timestamp)
+
 
 def validate_phone_number(phone_number: str) -> str:
     if not re.match(r'^\d{10}$', phone_number):
@@ -53,10 +63,10 @@ class PatientModel(BaseModel):
     id: Optional[str] = None
     firstName: str
     middleName: Optional[str] = ""
-    lastName: Optional[str] = ""
+    lastName: str
     gender: str
     dob: str
-    phoneNo: Optional[str] = None
+    phoneNo: str
     alternativeNumber: Optional[str] = ""
     city: str
     zipCode: str
@@ -65,7 +75,7 @@ class PatientModel(BaseModel):
     country: str
     race: str
     ethnicity: str
-    email: Optional[EmailStr] = ""
+    email: EmailStr
     height: Optional[str] = None
     weight: Optional[str] = None
     haveInsurance: bool
@@ -104,7 +114,7 @@ class PatientModel(BaseModel):
             return state_mapping
         raise ValueError("Invalid state code")
 
-    @field_validator('firstName', 'middleName', 'lastName', 'gender', 'city', 'state', 'country')
+    @field_validator('gender', 'city', 'state', 'country')
     def validate_name(cls, value):
         return validate_name(value)
 
@@ -112,9 +122,13 @@ class PatientModel(BaseModel):
     def validate_zip_code(cls, value):
         return validate_zip_code(value)
 
-    @field_validator('dob', 'primaryMemberDob')
+    @field_validator('dob')
     def validate_date_of_birth(cls, value):
         return validate_date_of_birth(value)
+    
+    @field_validator('primaryMemberDob')
+    def validate_primary_dob(cls, value):
+        return validate_primary_dob(value)
 
     @field_validator('phoneNo')
     def validate_phone_number(cls, value):
