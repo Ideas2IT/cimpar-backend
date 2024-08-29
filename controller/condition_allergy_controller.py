@@ -463,9 +463,9 @@ class ConditionClient:
                 resource = entry.get('resource', {})
                 system = resource.get('system', '')
                 code = resource.get('code', '')
-                definition = resource.get('definition', '')
-                if definition:
-                    allergy_info = {"system": system, "code": code, "display": definition}
+                display = resource.get('display', '')
+                if display:
+                    allergy_info = {"system": system, "code": code, "display": display}
                     allergy_info_list.append(allergy_info)
             if not allergy_list:
                 return JSONResponse(status_code=status.HTTP_200_OK, content=[])
