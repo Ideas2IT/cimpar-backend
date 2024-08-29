@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Query
 
 from models.condition_validation import ConditionModel, ConditionUpdateModel
 from utils.common_utils import permission_required
@@ -36,9 +36,9 @@ async def update_condition_allergy(patient_id: str, condition: ConditionUpdateMo
     return response
 
 
-@router.get("/master/condition_allergy/{allergy_name}")
+@router.get("/master/condition_allergy")
 @permission_required("CONDITION", "READ")
-async def get_allergy_list(allergy_name: str, request: Request):
+async def get_allergy_list(request: Request, allergy_name: str = Query(..., min_length=2)):
     if len(allergy_name) <= 2:
         logger.info("Allergy name must be at least 2 characters long.")
         return None
