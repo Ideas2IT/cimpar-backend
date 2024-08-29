@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Query
 
 from utils.common_utils import permission_required
 from models.medication_validation import MedicationCreateModel, MedicationUpdateModel
@@ -31,9 +31,9 @@ async def update_medication(updated_medication: MedicationUpdateModel, patient_i
     return MedicationClient.update_medication_by_patient_id(patient_id, updated_medication)
 
 
-@router.get("/master/medication/{medication_name}")
+@router.get("/master/medications/details")
 @permission_required("MEDICATION", "READ")
-async def get_medications_list(medication_name: str, request: Request):
+async def get_medications_list(request: Request, medication_name: str = Query(..., min_length=2)):
     if len(medication_name) <= 2:
         logger.info("Medication name must be at least 2 characters long.")
         return None
@@ -41,9 +41,9 @@ async def get_medications_list(medication_name: str, request: Request):
     return MedicationClient.get_medications(medication_name)
 
 
-@router.get("/master/medical_condition/{medical_condition}")
+@router.get("/master/medical_conditions/details")
 @permission_required("MEDICATION", "READ")
-async def get_medical_condition(medical_condition: str, request: Request):
+async def get_medical_condition(request: Request, medical_condition: str = Query(..., min_length=2)):
     if len(medical_condition) <= 2:
         logger.info("Medical condition must be at least 2 characters long.")
         return None
