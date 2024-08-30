@@ -20,6 +20,7 @@ from constants import (
 from services.aidbox_resource_wrapper import Condition
 from services.aidbox_resource_wrapper import AllergyIntolerance
 from models.condition_validation import ConditionModel, ConditionUpdateModel
+from utils.common_utils import param_encode
 
 logger = logging.getLogger("log")
 
@@ -451,9 +452,10 @@ class ConditionClient:
     def get_allergy_list(allergy_name: str):
         allergy_info_list = []
         try:
+            encode_data = param_encode(allergy_name)
             allergy_list = AidboxApi.make_request(
                 method="GET",
-                endpoint=f"/Concept?.display$contains={allergy_name}&system=http://hl7.org/fhir/sid/icd-10",
+                endpoint=f"/Concept?.display$contains={encode_data}&system=http://hl7.org/fhir/sid/icd-10",
             )
             logger.info(f"Allergy List: {allergy_list}")
             data = allergy_list.json()

@@ -10,7 +10,7 @@ from services.aidbox_resource_wrapper import MedicationRequest
 from services.aidbox_resource_wrapper import MedicationStatement
 from models.medication_validation import MedicationCreateModel, MedicationUpdateModel
 from constants import PATIENT_REFERENCE, INTEND, CURRENT, OTHER
-
+from utils.common_utils import param_encode
 
 logger = logging.getLogger("log")
 
@@ -281,9 +281,10 @@ class MedicationClient:
     @staticmethod
     def get_medications(medication_name: str):
         try:
+            encode_data = param_encode(medication_name)
             medication_list_snomed = AidboxApi.make_request(
                 method="GET",
-                endpoint=f"/fhir/Concept?.display$contains={medication_name}&.system=http://www.nlm.nih.gov/research/umls/rxnorm",
+                endpoint=f"/fhir/Concept?.display$contains={encode_data}&.system=http://www.nlm.nih.gov/research/umls/rxnorm",
             )
             logger.info(f"Medication List: {medication_list_snomed}")
             data = medication_list_snomed.json()
@@ -306,9 +307,10 @@ class MedicationClient:
     @staticmethod
     def get_medical_condition(medical_condition_name: str):
         try: 
+            encode_data = param_encode(medical_condition_name)
             medical_condition = AidboxApi.make_request(
                 method="GET",
-                endpoint=f"/Concept?.display$contains={medical_condition_name}&.system=http://snomed.info/sct",
+                endpoint=f"/Concept?.display$contains={encode_data}&.system=http://snomed.info/sct",
             )
             data = medical_condition.json()
             entries = data.get("entry", [])
