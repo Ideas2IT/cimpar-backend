@@ -3,6 +3,7 @@ import json
 import logging
 import contextvars
 import random
+import urllib.parse
 from datetime import datetime, timedelta
 
 import requests
@@ -253,4 +254,14 @@ def delete_file_azure(container_name, blob_name):
     # logger.info(f"Deleting the blob for URL: {blob_name}")
     response = True if BlobServiceClient.from_connection_string(os.environ.get("CONNECTION_STRING")).get_container_client(container_name).get_blob_client(blob_name).delete_blob() is None else False
     return response
+
+def param_encode(text):
+    encoded_text = urllib.parse.quote(text)
+    return encoded_text
+
+def format_date_with_time(date_str: str, date_type: str) -> str:
+    if date_type == "start":
+        return f"{date_str}T00:00:00.000Z"
+    elif date_type == "end":
+        return f"{date_str}T23:59:59.999Z"
 
