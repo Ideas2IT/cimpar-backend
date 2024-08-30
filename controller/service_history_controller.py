@@ -6,7 +6,7 @@ import traceback
 from services.aidbox_service import AidboxApi
 from controller.appointment_controller import AppointmentClient
 from constants import UPCOMING_APPOINTMENT, CONTAINER_NAME
-from utils.common_utils import azure_file_handler
+from utils.common_utils import azure_file_handler, param_encode
 
 logger = logging.getLogger("log")
 
@@ -200,14 +200,16 @@ class ServiceHistoryClient:
     def custom_query_with_pagination(query_name: str, patient_id: str, search: str, page: int, page_size: int):
         limit = page_size
         offset = (page - 1) * page_size
+        if search:
+            encode_data = param_encode(search)
         response_name = AidboxApi.make_request(
             method="GET",
-            endpoint=f"/$query/{query_name}?patient_id={patient_id}&search={search}&limit={limit}&offset={offset}"
+            endpoint=f"/$query/{query_name}?patient_id={patient_id}&search={encode_data}&limit={limit}&offset={offset}"
         )
         data = response_name.json()
         count_res = AidboxApi.make_request(
             method="GET",
-            endpoint=f"/$query/{query_name}Count?patient_id={patient_id}&search={search}"
+            endpoint=f"/$query/{query_name}Count?patient_id={patient_id}&search={encode_data}"
         )
         count_resp = count_res.json()
         total_count = count_resp["data"][0]["count"]
