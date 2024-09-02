@@ -182,7 +182,7 @@ class PatientUpdateModel(BaseModel):
             return state_mapping
         raise ValueError("Invalid state code")
 
-    @field_validator('firstName', 'middleName', 'lastName', 'gender', 'city', 'state', 'country')
+    @field_validator('gender', 'city', 'state', 'country')
     def validate_name(cls, value):
         return validate_name(value)
 
