@@ -201,15 +201,15 @@ class ServiceHistoryClient:
         limit = page_size
         offset = (page - 1) * page_size
         if search:
-            encode_data = param_encode(search)
+            search = param_encode(search)
         response_name = AidboxApi.make_request(
             method="GET",
-            endpoint=f"/$query/{query_name}?patient_id={patient_id}&search={encode_data}&limit={limit}&offset={offset}"
+            endpoint=f"/$query/{query_name}?patient_id={patient_id}&search={search}&limit={limit}&offset={offset}"
         )
         data = response_name.json()
         count_res = AidboxApi.make_request(
             method="GET",
-            endpoint=f"/$query/{query_name}Count?patient_id={patient_id}&search={encode_data}"
+            endpoint=f"/$query/{query_name}Count?patient_id={patient_id}&search={search}"
         )
         count_resp = count_res.json()
         total_count = count_resp["data"][0]["count"]
