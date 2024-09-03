@@ -259,9 +259,3 @@ def param_encode(text):
     encoded_text = urllib.parse.quote(text)
     return encoded_text
 
-def format_date_with_time(date_str: str, date_type: str) -> str:
-    if date_type == "start":
-        return f"{date_str}T00:00:00.000Z"
-    elif date_type == "end":
-        return f"{date_str}T23:59:59.999Z"
-

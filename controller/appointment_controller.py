@@ -29,7 +29,7 @@ from models.appointment_validation import AppoinmentModel
 from controller.patient_controller import PatientClient
 from services.aidbox_resource_wrapper import AllergyIntolerance
 from services.aidbox_resource_wrapper import Condition
-from utils.common_utils import paginate, param_encode, format_date_with_time
+from utils.common_utils import paginate, param_encode
 from services.aidbox_service import AidboxApi
 from controller.insurance_controller import CoverageClient
 from controller.condition_allergy_controller import ConditionClient
@@ -471,16 +471,14 @@ class AppointmentClient:
         try:
             limit = page_size
             offset = (page - 1) * page_size
-            start = format_date_with_time(start_date, "start")
-            end = format_date_with_time(end_date, "end")
             response_name = AidboxApi.make_request(
                 method="GET",
-                endpoint=f"/$query/appointmentByStartDate?start={start}&end={end}&limit={limit}&offset={offset}"
+                endpoint=f"/$query/appointmentByStartDate?start={start_date}&end={end_date}&limit={limit}&offset={offset}"
             )
             data = response_name.json()
             count_res = AidboxApi.make_request(
                 method="GET",
-                endpoint=f"/$query/appointmentByStartDateCount?start={start}&end={end}"
+                endpoint=f"/$query/appointmentByStartDateCount?start={start_date}&end={end_date}"
             )
             count_resp = count_res.json()
             total_count = count_resp["data"][0]["count"]
@@ -747,19 +745,15 @@ class AppointmentClient:
     def custom_query_with_pagination(query_name: str, patient_name, start_date, end_date, service_name, page, page_size):
         limit = page_size
         offset = (page - 1) * page_size
-        if start_date:
-            start = format_date_with_time(start_date, "start")
-        if end_date:
-            end = format_date_with_time(end_date, "end")
         response_name = AidboxApi.make_request(
             method="GET",
-            endpoint=f"/$query/{query_name}?patientName={patient_name}&start_date={start}&end_date={end}"
+            endpoint=f"/$query/{query_name}?patientName={patient_name}&start_date={start_date}&end_date={end_date}"
                      f"&service_name={service_name}&limit={limit}&offset={offset}"
         )
         data = response_name.json()
         count_res = AidboxApi.make_request(
             method="GET",
-            endpoint=f"/$query/{query_name}Count?patientName={patient_name}&start_date={start}&end_date={end}"
+            endpoint=f"/$query/{query_name}Count?patientName={patient_name}&start_date={start_date}&end_date={end_date}"
                      f"&service_name={service_name}"
         )
         count_resp = count_res.json()
