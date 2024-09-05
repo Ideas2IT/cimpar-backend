@@ -21,7 +21,6 @@ class AuthClient:
     @staticmethod
     def create(user: UserModel, pat: PatientModel):
         try:
-            print("pat", pat)
             logger.info("Creating the user: %s" % user)
             user_id = user.id
             if user.role.lower() == "admin":
@@ -198,8 +197,12 @@ class AuthClient:
     @staticmethod
     def change_password(change: ChangePassword):
         try:
-            token = TokenModel(username=change.username, password=change.old_password,
-                               client_id=change.client_id, grant_type=change.grant_type)
+            token = TokenModel(
+                username=change.username,
+                password=change.old_password,
+                client_id=change.client_id,
+                grant_type=change.grant_type
+            )
             resp = AuthClient.create_token(token)
             user_email = resp.get("userinfo", {}).get("email")
             user_id = resp.get("userinfo", {}).get("id")
@@ -209,22 +212,37 @@ class AuthClient:
                     detail="Username or password is incorrect."
                 )
             if change.old_password == change.new_password:
-                return  HTTPException(
+                raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="The new password must be different from the old password."
                 )
-            password_data = {
-                "password": change.new_password,
-            }
+            password_data = {"password": change.new_password}
             response = API.make_request(method="PATCH", endpoint=f"/User/{user_id}", json=password_data)
             response.raise_for_status()
             return {"message": "Password updated successfully"}
+        except HTTPException as http_exc:
+            logger.error(f"Unable to change the password: {str(http_exc)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to change the password: Incorrect email or password",
+                "details": str(http_exc.detail),
+            }
+            return JSONResponse(
+                status_code=http_exc.status_code,
+                content=error_response_data
+            )
         except Exception as e:
             logger.error(f"Unable to change the password: {str(e)}")
             logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to change the password: Incorrect Username or password",
+                "details": str(e),
+            }
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                content=f"Unable to change the password: Incorrect Username or password")
+                content=error_response_data
+            )
+
 
     @staticmethod
     def reset_password(email):
