@@ -6,6 +6,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 import sys
 import os
+import requests
 from os.path import abspath, dirname, join
 from urllib.parse import urljoin
 import logging
@@ -65,6 +66,26 @@ app.include_router(medication_routes.router, prefix="/api", tags=["MEDICATION"])
 app.include_router(patient_routes.router, prefix="/api", tags=["PATIENT"])
 app.include_router(service_history_routes.router, prefix="/api", tags=["SERVICE_HISTORY"])
 app.include_router(version_router.router, prefix="/api", tags=["VERSION"])
+
+
+AIDBOX_URL = os.environ.get("AIDBOX_URL", "")
+
+
+def check_aidbox_status():
+    try:
+        response = requests.get(f"{AIDBOX_URL}/health")
+        return "up" if response.status_code == 200 else "down"
+    except requests.RequestException:
+        return "down"
+
+
+@app.get("/api/health", tags=["HEALTH"])
+async def health_check():
+    return {
+        "service": "Cimpar Backend",
+        "version": CIMPAR_BE_VERSION,
+        "aidbox_status": check_aidbox_status()
+    }
 
 
 @app.get("/api/documentation", include_in_schema=False)
