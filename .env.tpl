@@ -6,6 +6,9 @@ AIDBOX_CLIENT_PASSWORD=
 # Constants
 APP_DOC_ENVIRONMENT = "CIMPAR DEV API DOCS"
 ENVIRONMENT = "DEVELOPMENT"
+INSURANCE_CONTAINER = "cimparinsurancedatadev"
+VISIT_HISTORY_CONTAINER = "cimparvisithistorydatadev"
+LAB_TEST_CONTAINER = "cimparlabtestdocdev"
 
 # Proxy URL
 BASE_URL =
