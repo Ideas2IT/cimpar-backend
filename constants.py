@@ -1,3 +1,8 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 GROUP_SYSTEM = "http://terminology.hl7.org/CodeSystem/coverage-class"
 GROUP_CODE = "group"
 PHONE_SYSTEM = "phone"
@@ -51,12 +56,12 @@ GENDER_MAPPING = {
     "U": "Unknown",
     "O" : "Other"
 }
-INSURANCE_CONTAINER = "cimparinsurancedatadev"
-VISIT_HISTORY_CONTAINER = "cimparvisithistorydatadev"
+INSURANCE_CONTAINER = os.environ.get("INSURANCE_CONTAINER", "")
+VISIT_HISTORY_CONTAINER = os.environ.get("VISIT_HISTORY_CONTAINER", "")
 FILE_SIZE = 6.00
 FILE_ETL_HOUR = 1
 DELETED = 'deleted'
-CONTAINER_NAME = "cimparlabtestdocdev"
+CONTAINER_NAME = os.environ.get("LAB_TEST_CONTAINER", "")
 CONDITION_APP_SYSTEM = "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification"
 APPOINTMENT_CODE = "confirmed"
 ALLERGY_APP_SYSTEM = "http://terminology.hl7.org/CodeSystem/condition-verification"
