@@ -87,7 +87,7 @@ class ObservationClient:
                 file_url = azure_file_handler(container_name=CONTAINER_NAME,
                                               blob_name=f"{patient_id}/{labresult_values['resource']['id']}",
                                               fetch=True)
-                lab_result_json['resource']['file_url'] = file_url if file_url else False
+                lab_result_json['file_url'] = file_url if file_url else False
             result["data"] = lab_result_json
             result["current_page"] = page
             result["page_size"] = page_size
