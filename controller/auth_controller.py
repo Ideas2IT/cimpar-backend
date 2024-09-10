@@ -117,8 +117,8 @@ class AuthClient:
             logger.error(f"Unable to confirm a token: {str(e)}")
             logger.error(traceback.format_exc())
             error_response_data = {
-                "error": "Unable to confirm a token",
-                "details": str(e),
+                "error": str(e),
+                "details": "Unable to confirm a token",
             }
             return JSONResponse(
                 content=error_response_data,
@@ -224,7 +224,7 @@ class AuthClient:
             logger.error(f"Unable to change the password: {str(http_exc)}")
             logger.error(traceback.format_exc())
             error_response_data = {
-                "error": "Unable to change the password: Incorrect email or password",
+                "error": "The new password must be different from the old password.",
                 "details": str(http_exc.detail),
             }
             return JSONResponse(
