@@ -8,6 +8,7 @@ from models.version_validation import VersionUpdateModel
 router = APIRouter()
 logger = logging.getLogger("log")
 
+
 @router.get("/version")
 @permission_required("VERSION", "READ")
 async def get_version(request: Request):
