@@ -74,6 +74,7 @@ async def create_encounter(
         content=response, status_code=status.HTTP_200_OK
     )
 
+
 @router.get("/encounter/{patient_id}")
 @permission_required("ENCOUNTER", "READ")
 async def get_encounter_by_patient_id(

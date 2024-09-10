@@ -9,7 +9,7 @@ router = APIRouter()
 logger = logging.getLogger("log")
 
 
-@router.get("/service_history/{patient_id}/")
+@router.get("/service_history/{patient_id}")
 @permission_required("IMMUNIZATION", "READ")
 async def get_service_history_by_id(
     request: Request,
