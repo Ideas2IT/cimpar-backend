@@ -81,7 +81,6 @@ class MedicationClient:
                 )
                 medication_request.save()
                 result["other_medication_id"] = medication_request.id
-            result["is_other_medication_exist"] = True
 
             if med.statement_approved and not result["is_current_medication_exist"]:
                 medication_statement = MedicationClient.create_medication_statement(
@@ -89,7 +88,6 @@ class MedicationClient:
                 )
                 medication_statement.save()
                 result["current_medication_id"] = medication_statement.id
-            result["is_current_medication_exist"] = True
             result["created"] = True
             logger.info(f"Added Successfully in DB: {result}")
 

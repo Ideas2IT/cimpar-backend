@@ -26,7 +26,6 @@ from constants import (
 )
 from services.aidbox_resource_wrapper import Appointment
 from models.appointment_validation import AppoinmentModel
-from controller.patient_controller import PatientClient
 from services.aidbox_resource_wrapper import AllergyIntolerance
 from services.aidbox_resource_wrapper import Condition
 from utils.common_utils import paginate, param_encode
@@ -357,7 +356,8 @@ class AppointmentClient:
             result = []
             try:
                 patient_details = AppointmentClient.get_patient_detail(patient_id)
-                patient_id = patient_details["id"]
+                if patient_details:
+                    patient_data = patient_details[0]
             except Exception as e:
                 logger.error(f"Unable to fetch the patient details: {e}")
                 patient_details = {}
@@ -378,12 +378,12 @@ class AppointmentClient:
                     "appointmentId": appointment_detail.get("id"),
                     "reason_for_test": appointment_detail.get("patientInstruction"),
                     "patientId": patient_id_extracted,
-                    "name": (patient_details.get('firstName', '') + " " + patient_details.get('lastName', '')).strip(),
-                    "dob": patient_details.get('dob'),
-                    "gender": patient_details.get("gender"),
-                    "email": patient_details.get("email"),
-                    "phoneNo": patient_details.get("phoneNo"),
-                    "alternativeNumber": patient_details.get("alternativeNumber"),
+                    "name": (patient_data.get('firstName', '') + " " + patient_data.get('lastName', '')).strip(),
+                    "dob": patient_data.get('dob'),
+                    "gender": patient_data.get("gender"),
+                    "email": patient_data.get("email"),
+                    "phoneNo": patient_data.get("phoneNo"),
+                    "alternativeNumber": patient_data.get("alternativeNumber"),
                     "appointmentFor": service_type_display,
                     'start': appointment_detail.get("start"),
                     'end': appointment_detail.get("end"),
@@ -522,18 +522,6 @@ class AppointmentClient:
     @staticmethod
     def get_appointment(patient_name: str = "", start_date: str = "", end_date: str = "",
                         service_name: str = "", page: int = 1, page_size: int = 100):
-        # if patient_name:
-        #     return AppointmentClient.get_by_patient_name(patient_name, page, page_size)
-        # elif start_date or end_date:
-        #     start_date = start_date if start_date else START_DATE
-        #     end_date = end_date if end_date else END_DATE
-        #     return AppointmentClient.get_appointment_by_date(start_date, end_date, page, page_size)
-        # elif service_name:
-        #     return AppointmentClient.custom_query_with_pagination(
-        #             "filteredAppointmentServiceType", service_name, page, page_size
-        #         )
-        # else:
-        #     return AppointmentClient.get_appointment_detail(page, page_size)
         start_date = start_date if start_date else START_DATE
         end_date = end_date if end_date else END_DATE
         return AppointmentClient.custom_query_with_pagination(
@@ -558,7 +546,6 @@ class AppointmentClient:
                 except Exception as e:
                     logger.error(f"Unable to fetch the patient details for patient_id {patient_id}: {e}")
                     patient_details_map[patient_id] = {}
-
                 try:
                     coverage_response = CoverageClient.get_insurance_detail(patient_id)
                     insurance_details_map[patient_id] = coverage_response
@@ -600,22 +587,30 @@ class AppointmentClient:
         appointment_values = AppointmentClient.get_appointment_data(formatted_data)
         results = [] 
         unique_patient_ids = set(each_appointment["patient_id"] for each_appointment in appointment_values)
+        seperate_patient_id = ', '.join(unique_patient_ids)
         patient_details_map = {}
         insurance_details_map = {}
-        for patient_id in unique_patient_ids:
-            try:
-                patient_details = AppointmentClient.get_patient_detail(patient_id)
-                patient_details_map[patient_id] = patient_details
-                patient_id = patient_details["id"]
-            except Exception as e:
-                logger.error(f"Unable to fetch the patient details for patient_id {patient_id}: {e}")
-                patient_details_map[patient_id] = {}
-            try:
-                insurance_detail = CoverageClient.get_insurance_detail(patient_id)
-                insurance_details_map[patient_id] = insurance_detail
-            except Exception as e:
-                logger.error(f"Unable to fetch the Insurance details for patient_id {patient_id}: {e}")
-                insurance_details_map[patient_id] = {}
+        try:
+            patient_details = AppointmentClient.get_patient_detail(seperate_patient_id)
+            for patient in patient_details:
+                patient_id = patient["id"]
+                patient_details_map[patient_id] = patient
+        except Exception as e:
+            logger.error(f"Unable to fetch the patient details for patient_id {unique_patient_ids}: {e}")
+            patient_details_map["id"] = {}
+        try:
+            insurance_details = AppointmentClient.get_insurance_detail(seperate_patient_id)
+            insurance_details_map = {patient_id: {"insurance": "No"} for patient_id in unique_patient_ids}
+            for coverage in insurance_details.get("coverage_details", []):
+                patient_id = coverage.get("patient_id")
+                if patient_id in insurance_details_map:
+                    insurance_details_map[patient_id] = {
+                        "insurance": "Yes",
+                        "coverage_details": insurance_details.get("coverage_details", [])
+                    }
+        except Exception as e:
+            logger.error(f"Unable to fetch the Insurance details for patient_id {unique_patient_ids}: {e}")
+            insurance_details_map["id"] = {}
         patient_id_extract = []
         results = []
         for each_appointment in appointment_values:
@@ -635,13 +630,55 @@ class AppointmentClient:
                 'end': each_appointment.get("end")
             }
             results.append(result)
-
         return results
 
     @staticmethod
     def get_patient_detail(patient_id):
-        patient = PatientClient.get_patient_by_id(patient_id)
-        return patient
+        try: 
+            patient_data = AidboxApi.make_request(
+                method="GET",
+                endpoint=f"/fhir/Patient?id={patient_id}",
+            )
+            if patient_data.status_code == 200:
+                data = patient_data.json()
+                if data.get('total') > 0:
+                    patient_data = AppointmentClient.extract_patient_details(data)
+                    return patient_data
+                return []
+        except Exception as e:
+            logger.error(f"Unable to get patient: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to get patient",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data, status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+    @staticmethod
+    def get_insurance_detail(patient_id):
+        try: 
+            patient_data = AidboxApi.make_request(
+                method="GET",
+                endpoint=f"/Coverage/?.beneficiary.id={patient_id}",
+            )
+            if patient_data.status_code == 200:
+                data = patient_data.json()
+                if data.get('total') > 0:
+                    coverage_data = AppointmentClient.get_insurance_data(data)
+                    return coverage_data
+                return []
+        except Exception as e:
+            logger.error(f"Unable to get Coverage: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to get Coverage",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data, status_code=status.HTTP_404_NOT_FOUND
+            )
 
     @staticmethod
     def get_patient_id_and_service_type_from_appointment(appointment_value):
@@ -872,3 +909,61 @@ class AppointmentClient:
         )
         condition_instance.save()
         return condition_instance.id
+    
+    @staticmethod
+    def extract_patient_details(bundle):
+        extracted_patients = []
+        for entry in bundle.get("entry", []):
+            patient_resource = entry.get("resource", {})
+            patient_id = patient_resource.get("id")
+            first_name = patient_resource.get("name", [{}])[0].get("given", [None])[0]
+            last_name = patient_resource.get("name", [{}])[0].get("family")
+            dob = patient_resource.get("birthDate")
+            gender = patient_resource.get("gender")
+            contact_info = patient_resource.get("contact", [{}])[0].get("telecom", [])
+            email = next((contact.get("value") for contact in contact_info if contact.get("system") == "email"), None)
+            phone_no = next((contact.get("value") for contact in contact_info if contact.get("use") == "home"), None)
+            alternative_number = next((contact.get("value") for contact in contact_info if contact.get("use") == "temp"), None)
+            patient_details = {
+                "id": patient_id,
+                "firstName": first_name,
+                "lastName": last_name,
+                "dob": dob,
+                "gender": gender,
+                "email": email,
+                "phoneNo": phone_no,
+                "alternativeNumber": alternative_number
+            }
+            extracted_patients.append(patient_details)
+        return extracted_patients
+
+    
+
+    @staticmethod
+    def get_insurance_data(coverage_response):
+        patient_result = {}
+        coverages = []
+        total_coverage = 0  
+        if coverage_response.get('total') > 0:
+            total_coverage = coverage_response.get('total')
+            coverage_entries = coverage_response.get('entry', [])            
+            for entry in coverage_entries:
+                resource = entry.get('resource', {})
+                class_info = resource.get('class', [{}])[0]
+                beneficiary_reference = resource.get('beneficiary', {}).get('id', "")
+                patient_id = beneficiary_reference.split("/")[-1] if beneficiary_reference else ""                
+                coverage_info = {
+                    "id": resource.get('id', ''),
+                    "patient_id": patient_id,
+                    "providerName": resource.get('payor', [{}])[0].get('display', ''),
+                    "policyNumber": resource.get('subscriberId', ''),
+                    "groupNumber": class_info.get('name', ''),
+                    "note": class_info.get('value', '')
+                }
+                coverages.append(coverage_info)
+        else:
+            total_coverage = 0
+        patient_result["insurance"] = "No" if total_coverage == 0 else "Yes"
+        patient_result["coverage_details"] = coverages
+        return patient_result
+
