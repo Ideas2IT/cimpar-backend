@@ -70,7 +70,6 @@ class PatientClient:
                         if coverage_values.get('is_secondary_insurance'):
                             result_data['secondary_insurance_id'] = coverage_values.get('is_secondary_insurance')
                 result_data["Updated"] = patient_update.get("Updated")
-                #if (not user_json) or (user_json and getattr(user_json[0], "inactive", False)):
                 if pat.createAccount and not User.get({"id": patient_id_update}):
                     user = UserModel(
                         email=pat.email,
@@ -223,7 +222,7 @@ class PatientClient:
         try:
             patients = paginate(Patient, page, page_size)
             logger.info(f"Patients Found: {len(patients)}")
-            if patients.get('total', 1) == 0:
+            if patients.get('total') == 0:
                 return JSONResponse(
                     content=[],
                     status_code=status.HTTP_200_OK

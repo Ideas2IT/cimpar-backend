@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from utils.common_utils import paginate
 from services.aidbox_resource_wrapper import Observation
 from constants import DELETED, CONTAINER_NAME
-from utils.common_utils import azure_file_handler, delete_file_azure
+from utils.common_utils import azure_file_handler, delete_file_azure, param_encode
 
 logger = logging.getLogger("log")
 
@@ -47,7 +47,7 @@ class ObservationClient:
     def get_all_lab_result(page, page_size):
         try:
             lab_result = paginate(Observation, page, page_size)
-            if lab_result.get('total', 1) == 0:
+            if lab_result.get('total') == 0:
                 logger.info(f"Lab result found for: {len(lab_result)}")
                 return JSONResponse(
                     content=[],
@@ -74,12 +74,14 @@ class ObservationClient:
     def get_lab_result_by_name(patient_id: str, name: str, page: int, page_size: int):
         try:
             result = {}
+            if name:
+                name = param_encode(name)
             lab_result = Observation.make_request(
                 method="GET",
                 endpoint=f"/fhir/Observation?subject=Patient/{patient_id}&.code.coding.0.display$contains={name}"
                          f"&_page={page}&_count={page_size}&_sort=-lastUpdated")
             lab_result_json = lab_result.json()
-            if lab_result_json.get('total', 0) == 0:
+            if lab_result_json.get('total') == 0:
                 logger.info(f"Lab Result Not Found: {name} and {patient_id}")
                 return []
             for labresult_values in lab_result_json['entry']:
@@ -117,7 +119,7 @@ class ObservationClient:
                          f"&_sort=-lastUpdated"
             )
             lab_result_json = lab_result.json()
-            if lab_result_json.get('total', 0) == 0:
+            if lab_result_json.get('total') == 0:
                 logger.info(f"No labtest found for patient: {patient_id}")
                 return []
             for labresult_values in lab_result_json['entry']:
