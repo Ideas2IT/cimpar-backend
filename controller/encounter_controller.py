@@ -20,9 +20,7 @@ from constants import (
 )
 from models.encounter_validation import EncounterModel, EncounterUpdateModel
 from services.aidbox_resource_wrapper import Encounter
-from utils.common_utils import paginate
-
-from utils.common_utils import azure_file_handler, delete_file_azure
+from utils.common_utils import paginate, azure_file_handler, delete_file_azure
 
 logger = logging.getLogger("log")
 
@@ -105,7 +103,7 @@ class EncounterClient:
                 endpoint=f"/fhir/Encounter/?subject=Patient/{patient_id}&_page={page}&_count={count}&_sort=-lastUpdated"
             )
             encounter_data = encounter.json()
-            if encounter_data.get('total', 0) == 0:
+            if encounter_data.get('total') == 0:
                 logger.info(f"No encounters found for patient: {patient_id}")
                 return JSONResponse(
                     content=[],
@@ -255,7 +253,7 @@ class EncounterClient:
     def get_all_encounters(page, page_size):
         try:
             encounters = paginate(Encounter, page, page_size)
-            if encounters.get('total', 1) == 0:
+            if encounters.get('total') == 0:
                 return JSONResponse(
                     content=[],
                     status_code=status.HTTP_200_OK
