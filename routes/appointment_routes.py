@@ -1,6 +1,6 @@
 import logging
 from fastapi import APIRouter, Request, Query
-from typing import Optional, List
+from typing import Optional
 
 from utils.common_utils import permission_required
 from models.appointment_validation import AppoinmentModel, StatusModel
