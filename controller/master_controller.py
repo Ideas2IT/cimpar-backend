@@ -61,18 +61,31 @@ class MasterClient:
 
 
     @staticmethod
-    def fetch_master_data(table_name: str, code: str, display: str):
+    def fetch_master_data(table_name: str, code: str, display: str, page: str, page_size: str):
         if table_name not in MasterClient.table:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Kindly, verify the name.")
         try:
+            result = {}
             master_values = API.make_request(
                 method="GET",
-                endpoint=f"/{MasterClient.table[table_name]}?.display$contains={display}&.code$contains={code}"
+                endpoint=f"/{MasterClient.table[table_name]}?&_page={page}&_count={page_size}&.display$contains={display}&.code$contains={code}"
             )
             if master_values.status_code == 200:
                 values = master_values.json()
-                if values.get('total') > 0:
-                    return MasterClient.extract_details(values)
+                if values.get('total') == 0:
+                    return []
+                elif values.get('total') > 0:
+                    master_value = MasterClient.extract_details(values)
+                    result = {
+                        "data": master_value,
+                        "pagination": {
+                            "current_page": page,
+                            "page_size": page_size,
+                            "total_items": values.get('total'),
+                            "total_pages": (int(values["total"]) + page_size - 1) // page_size
+                        } 
+                    }
+                    return result
                 else:
                     logger.error(table_name)
                     logger.error(master_values.status_code)
@@ -238,3 +251,27 @@ class MasterClient:
                 }
                 master_values.append(item)
         return master_values
+    
+    @staticmethod
+    def fetch_master_using_code(table_name: str, code: str):
+        if table_name not in MasterClient.table:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Kindly, verify the name.")
+        try:
+            master_values = API.make_request(
+                method="GET",
+                endpoint=f"/fhir/{MasterClient.table[table_name]}?.code={code}"
+            )
+            values = master_values.json()
+            master_value = {}
+            if values and values["entry"]:
+                master_value.update(
+                    {
+                        "id": values["entry"][0].get("resource", {}).get("id"),
+                        "code": values["entry"][0].get("resource", {}).get("code"),
+                        "display": values["entry"][0].get("resource", {}).get("display")
+                    }
+                )
+            return master_value
+        except Exception as e:
+            logger.error(f"Unable to fetch the code: {e}")
+            return {}

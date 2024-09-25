@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Query
 from typing import Optional
 
 from utils.common_utils import permission_required
@@ -19,9 +19,9 @@ async def get_master_value(table_name: str, request: Request):
 
 @router.get("/master/{table_name}/filtered")
 @permission_required("MASTER", "READ")
-async def get_master_data(table_name: str, request: Request, code: Optional[str] = "", display: Optional[str] = ""):
+async def get_master_data(table_name: str, request: Request, code: Optional[str] = "", display: Optional[str] = "", page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
     logger.info(f"master table {table_name}")
-    return MasterClient.fetch_master_data(table_name, code, display)
+    return MasterClient.fetch_master_data(table_name, code, display, page, page_size)
 
 @router.post("/master/{table_name}")
 @permission_required("MASTER", "CREATE")
