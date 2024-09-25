@@ -65,3 +65,4 @@ CONTAINER_NAME = os.environ.get("LAB_TEST_CONTAINER", "")
 CONDITION_APP_SYSTEM = "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification"
 APPOINTMENT_CODE = "confirmed"
 ALLERGY_APP_SYSTEM = "http://terminology.hl7.org/CodeSystem/condition-verification"
+TIME_THRESHOLD = 5 
