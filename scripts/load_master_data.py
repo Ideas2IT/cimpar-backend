@@ -173,7 +173,7 @@ concept_data = [
 # Create tables and populate them with data
 for table in tables:
     table_creation_response = requests.put(
-        f"{AIDBOX_URL}/admin/{table['id']}",
+        f"{AIDBOX_URL}/Entity/{table['id']}",
         headers=headers,
         auth=auth,
         json=table
@@ -206,6 +206,7 @@ for table in tables:
                 auth=auth,
                 json={"url": url}
             )
+        print(f"Adding data to {table['id']} - Status code: {entry_creation_response.status_code}")
     else:
         for data in data_list:
             entry_creation_response = requests.post(
