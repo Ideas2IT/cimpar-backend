@@ -69,11 +69,21 @@ class MasterClient:
             master_values = API.make_request(
                 method="GET",
                 endpoint=f"/{MasterClient.table[table_name]}?&_page={page}&_count={page_size}&.display$contains={display}&.code$contains={code}"
+                f"&_sort=-lastUpdated"
             )
             if master_values.status_code == 200:
                 values = master_values.json()
                 if values.get('total') == 0:
-                    return []
+                    result = {
+                        "data": [],
+                        "pagination": {
+                            "current_page": page,
+                            "page_size": page_size,
+                            "total_items": values.get('total'),
+                            "total_pages": (int(values["total"]) + page_size - 1) // page_size
+                        } 
+                    }
+                    return result
                 elif values.get('total') > 0:
                     master_value = MasterClient.extract_details(values)
                     result = {
