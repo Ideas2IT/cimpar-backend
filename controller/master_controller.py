@@ -8,7 +8,8 @@ from aidbox.base import API
 from services.aidbox_service import AidboxApi
 from models.master_validation import (
     MasterModel, 
-    DeleteMasterModel
+    DeleteMasterModel,
+    UpdateMasterPrice
 )
 from constants import TIME_THRESHOLD
 
@@ -243,6 +244,42 @@ class MasterClient:
                 content=error_response_data,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
+        
+    @staticmethod
+    def update_price(table_name: str, resource_id: str, price: UpdateMasterPrice):
+        center_price = price.center_price
+        home_price = price.home_price
+        if (center_price == 0 or home_price == 0) or (center_price <= 0 and home_price <= 0):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Kindly, verify the price.")
+        try:
+            if price:
+                master_value = API.make_request(
+                    method="PATCH",
+                    endpoint=f"/{MasterClient.table[table_name]}/{resource_id}",
+                    json=price.__dict__
+                )
+                if master_value.status_code == 200:
+                    return master_value.json() 
+                else:
+                    logger.error(master_value.status_code)
+                    logger.error(master_value.json())
+                    raise Exception("Unable to update")
+            else:
+                logger.error(home_price, )
+                raise Exception("Unable to update")
+        except Exception as e:
+            logger.error(f"Unable to fetch the details: {e}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to save detail",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        
+
 
     @staticmethod
     def delete_master_data(table_name: str, resource_id: str, active: DeleteMasterModel):

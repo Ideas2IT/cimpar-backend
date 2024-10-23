@@ -4,7 +4,7 @@ from typing import Optional
 
 from utils.common_utils import permission_required
 from controller.master_controller import MasterClient
-from models.master_validation import MasterModel, DeleteMasterModel, UpdateMasterModel
+from models.master_validation import MasterModel, DeleteMasterModel, UpdateMasterModel, UpdateMasterPrice
 
 
 router = APIRouter()
@@ -49,4 +49,12 @@ async def update_master_data(table_name: str, resource_id: str, coding: UpdateMa
 async def delete_master_data(table_name: str, resource_id: str, active: DeleteMasterModel, request: Request):
     logger.info(f"master table {table_name}, lab_id {resource_id}")
     return MasterClient.delete_master_data(table_name, resource_id, active)
+
+@router.put("/master/{table_name}/pricing")
+@permission_required("MASTER", "UPDATE")
+async def update_pricing(table_name: str, resource_id: str, price: UpdateMasterPrice, request: Request):
+    logger.info(f"master table {table_name}, lab_id {resource_id} \
+            home price {price.home_price}, centerprice {price.center_price}")
+    return MasterClient.update_price(table_name, resource_id, price)
+
 
