@@ -61,14 +61,15 @@ class MasterClient:
 
 
     @staticmethod
-    def fetch_master_data(table_name: str, code: str, display: str, page: str, page_size: str):
+    def fetch_master_data(table_name: str, code: str, display: str,service_type: str, page: str, page_size: str):
         if table_name not in MasterClient.table:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Kindly, verify the name.")
         try:
             result = {}
             master_values = API.make_request(
                 method="GET",
-                endpoint=f"/{MasterClient.table[table_name]}?&_page={page}&_count={page_size}&.display$contains={display}&.code$contains={code}"
+                endpoint=f"/{MasterClient.table[table_name]}?&_page={page}&_count={page_size} \
+                &.display$contains={display}&.code$contains={code}&.service_type$contains={service_type}&_sort=-lastUpdated"
                 f"&_sort=-lastUpdated"
             )
             if master_values.status_code == 200:
@@ -76,6 +77,18 @@ class MasterClient:
                 if values.get('total') == 0:
                     result = {
                         "data": [],
+                        "pagination": {
+                            "current_page": page,
+                            "page_size": page_size,
+                            "total_items": values.get('total'),
+                            "total_pages": (int(values["total"]) + page_size - 1) // page_size
+                        } 
+                    }
+                    return result
+                elif values.get('total') > 0 and MasterClient.table[table_name] == "CimparLabTest":
+                    master_value = MasterClient.extract_lab_details(values)
+                    result = {
+                        "data": master_value,
                         "pagination": {
                             "current_page": page,
                             "page_size": page_size,
@@ -154,6 +167,10 @@ class MasterClient:
     def create_master_entries(table_name: str, coding: MasterModel):
         if table_name not in MasterClient.table:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Kindly, verify the name.")
+        center_price = coding.center_price
+        home_price = coding.home_price
+        if (center_price == 0 or home_price == 0) or (center_price <= 0 and home_price <= 0):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Kindly, verify the price.")
         try:
             master_data = MasterClient.fetch_data(table_name, coding)
             if master_data:
@@ -195,6 +212,10 @@ class MasterClient:
     def update_master_data(table_name: str, resource_id: str, coding: MasterModel):
         if table_name not in MasterClient.table:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Kindly, verify the name.")
+        center_price = coding.center_price
+        home_price = coding.home_price
+        if (center_price == 0 or home_price == 0) or (center_price <= 0 and home_price <= 0):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Kindly, verify the price.")
         try:
             if coding:
                 master_value = API.make_request(
@@ -257,7 +278,27 @@ class MasterClient:
                     "id": resource.get("id"),
                     "code": resource.get("code"),
                     "display": resource.get("display"),
-                    "is_active": resource.get("is_active")
+                    "is_active": resource.get("is_active"),
+                }
+                master_values.append(item)
+        return master_values
+    
+    @staticmethod
+    def extract_lab_details(detail):
+        master_values = []
+        if detail.get("entry"):
+            for entry in detail["entry"]:
+                resource = entry.get("resource", {})
+                currency_symbol = resource.get("currency_symbol")
+                item = {
+                    "id": resource.get("id"),
+                    "code": resource.get("code"),
+                    "display": resource.get("display"),
+                    "is_active": resource.get("is_active"),
+                    "service_type": resource.get("service_type"),
+                    "home_price": currency_symbol + str(resource.get("home_price", 0)),
+                    "center_price": currency_symbol + str(resource.get("center_price", 0)),
+                    "is_telehealth": resource.get("is_telehealth")
                 }
                 master_values.append(item)
         return master_values
@@ -278,7 +319,7 @@ class MasterClient:
                     {
                         "id": values["entry"][0].get("resource", {}).get("id"),
                         "code": values["entry"][0].get("resource", {}).get("code"),
-                        "display": values["entry"][0].get("resource", {}).get("display")
+                        "display": values["entry"][0].get("resource", {}).get("display"),
                     }
                 )
             return master_value

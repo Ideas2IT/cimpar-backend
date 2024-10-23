@@ -10,7 +10,6 @@ from models.master_validation import MasterModel, DeleteMasterModel, UpdateMaste
 router = APIRouter()
 logger = logging.getLogger("log")
 
-
 @router.get("/master/{table_name}")
 @permission_required("MASTER", "READ")
 async def get_master_value(table_name: str, request: Request):
@@ -19,9 +18,19 @@ async def get_master_value(table_name: str, request: Request):
 
 @router.get("/master/{table_name}/filtered")
 @permission_required("MASTER", "READ")
-async def get_master_data(table_name: str, request: Request, code: Optional[str] = "", display: Optional[str] = "", page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
+async def get_master_data(
+    table_name: str,
+    request: Request,
+    code: Optional[str] = "",
+    display: Optional[str] = "",
+    service_type: Optional[str] = "",
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+):
     logger.info(f"master table {table_name}")
-    return MasterClient.fetch_master_data(table_name, code, display, page, page_size)
+    return MasterClient.fetch_master_data(
+        table_name, code, display, service_type, page, page_size
+    )
 
 @router.post("/master/{table_name}")
 @permission_required("MASTER", "CREATE")
