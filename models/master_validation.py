@@ -25,3 +25,8 @@ class UpdateMasterModel(BaseModel):
     currency_symbol: Literal["$"] = "$"
     is_active: Literal[True]
     is_telehealth: bool
+
+
+class UpdateMasterPrice(BaseModel):
+    center_price: float
+    home_price: float
