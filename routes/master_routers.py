@@ -4,12 +4,11 @@ from typing import Optional
 
 from utils.common_utils import permission_required
 from controller.master_controller import MasterClient
-from models.master_validation import MasterModel, DeleteMasterModel, UpdateMasterModel
+from models.master_validation import MasterModel, DeleteMasterModel, UpdateMasterModel, UpdateMasterPrice
 
 
 router = APIRouter()
 logger = logging.getLogger("log")
-
 
 @router.get("/master/{table_name}")
 @permission_required("MASTER", "READ")
@@ -19,9 +18,19 @@ async def get_master_value(table_name: str, request: Request):
 
 @router.get("/master/{table_name}/filtered")
 @permission_required("MASTER", "READ")
-async def get_master_data(table_name: str, request: Request, code: Optional[str] = "", display: Optional[str] = "", page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
+async def get_master_data(
+    table_name: str,
+    request: Request,
+    code: Optional[str] = "",
+    display: Optional[str] = "",
+    service_type: Optional[str] = "",
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+):
     logger.info(f"master table {table_name}")
-    return MasterClient.fetch_master_data(table_name, code, display, page, page_size)
+    return MasterClient.fetch_master_data(
+        table_name, code, display, service_type, page, page_size
+    )
 
 @router.post("/master/{table_name}")
 @permission_required("MASTER", "CREATE")
@@ -40,4 +49,12 @@ async def update_master_data(table_name: str, resource_id: str, coding: UpdateMa
 async def delete_master_data(table_name: str, resource_id: str, active: DeleteMasterModel, request: Request):
     logger.info(f"master table {table_name}, lab_id {resource_id}")
     return MasterClient.delete_master_data(table_name, resource_id, active)
+
+@router.put("/master/{table_name}/pricing")
+@permission_required("MASTER", "UPDATE")
+async def update_pricing(table_name: str, resource_id: str, price: UpdateMasterPrice, request: Request):
+    logger.info(f"master table {table_name}, lab_id {resource_id} \
+            home price {price.home_price}, centerprice {price.center_price}")
+    return MasterClient.update_price(table_name, resource_id, price)
+
 

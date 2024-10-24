@@ -19,6 +19,7 @@ tables = [
     {"id": "CimparState", "type": "resource", "isOpen": True},
     {"id": "CimparLabTest", "type": "resource", "isOpen": True},
     {"id": "CimparInsuranceCompany", "type": "resource", "isOpen": True},
+    {"id": "CimparLocation", "type": "resource", "isOpen": True},
     {"id": "Concept"}
 ]
 
@@ -97,55 +98,55 @@ state_data = [
 ]
 
 lab_test_data =  [
-    {"code": "49765-1", "display": "Calcium", "is_active": True},
-    {"code": "2069-3", "display": "Chloride", "is_active": True},
-    {"code": "59826-8", "display": "Creatinine", "is_active": True},
-    {"code": "2024-8", "display": "Carbon Dioxide", "is_active": True},
-    {"code": "1557-8", "display": "Glucose", "is_active": True},
-    {"code": "6298-4", "display": "Potassium", "is_active": True},
-    {"code": "2947-0", "display": "Sodium", "is_active": True},
-    {"code": "6299-2", "display": "Urea Nitrogen", "is_active": True},
-    {"code": "1751-7", "display": "Albumin", "is_active": True},
-    {"code": "42719-5", "display": "Total Bilirubin", "is_active": True},
-    {"code": "77141-0", "display": "Alkaline Phosphatase", "is_active": True},
-    {"code": "76625-3", "display": "ALT", "is_active": True},
-    {"code": "48136-6", "display": "AST", "is_active": True},
-    {"code": "2093-3", "display": "Total Cholesterol", "is_active": True},
-    {"code": "3043-7", "display": "Triglycerides", "is_active": True},
-    {"code": "2085-9", "display": "HDL-Cholesterol", "is_active": True},
-    {"code": "98981-4", "display": "Uric Acid", "is_active": True},
-    {"code": "4548-4", "display": "Hemoglobin A1C", "is_active": True},
-    {"code": "3015-5", "display": "TSH", "is_active": True},
-    {"code": "3024-7", "display": "Free T4", "is_active": True},
-    {"code": "20507-0", "display": "RPR", "is_active": True},
-    {"code": "58410-2", "display": "Covid", "is_active": True},
-    {"code": "0101U", "display": "Test for detection of high-risk human papillomavirus in male urine", "is_active": True},
-    {"code": "0240U", "display": "Respiratory infectious agent detection by RNA for severe acute respiratory", "is_active": True},
-    {"code": "0353U", "display": "Detection of bacteria causing vaginosis and vaginitis by multiplex amplified", "is_active": True},
-    {"code": "0354U", "display": "Detection of Chlamydia trachomatis and Neisseria gonorrhoeae by multiplex", "is_active": True},
-    {"code": "0372U", "display": "Test for 16 genitourinary bacterial organisms and 1 genitourinary fungal", "is_active": True},
-    {"code": "80061", "display": "Blood test, lipids (cholesterol and triglycerides)", "is_active": True},
-    {"code": "82731", "display": "Ferritin (blood protein) level", "is_active": True},
-    {"code": "82747", "display": "Folic acid level, serum", "is_active": True},
-    {"code": "83037", "display": "Hemoglobin A1C level", "is_active": True},
-    {"code": "85032", "display": "Complete blood cell count (red cells, white blood cell, platelets), automated", "is_active": True},
-    {"code": "86704", "display": "Analysis for antibody to HIV-1 and HIV-2 virus", "active": True},
-    {"code": "86707", "display": "Hepatitis B surface antibody measurement", "is_active": True},
-    {"code": "86709", "display": "Measurement of Hepatitis A antibody", "is_active": True},
-    {"code": "86710", "display": "Measurement of Hepatitis A antibody (IgM)", "is_active": True},
-    {"code": "86711", "display": "Analysis for antibody to Influenza virus", "is_active": True},
-    {"code": "86780", "display": "Analysis for antibody, Treponema pallidum", "is_active": True},
-    {"code": "86803", "display": "Hepatitis C antibody measurement", "is_active": True},
-    {"code": "87154", "display": "Identification of organisms by nucleic acid sequencing method", "is_active": True},
-    {"code": "87341", "display": "Detection test by immunoassay technique for Hepatitis B surface antigen", "is_active": True},
-    {"code": "87389", "display": "Detection test by immunoassay technique for HIV-1 antigen and HIV-1 and HIV-2", "is_active": True},
-    {"code": "87506", "display": "Detection test by nucleic acid for digestive tract pathogen, multiple types or", "is_active": True},
-    {"code": "87512", "display": "Detection test for gardnerella vaginalis (bacteria), amplified probe technique", "is_active": True},
-    {"code": "87591", "display": "Detection test by nucleic acid for Neisseria gonorrhoeae (gonorrhoeae", "is_active": True},
-    {"code": "87631", "display": "Detection test by nucleic acid for human papillomavirus (hpv), types 16 and 18", "is_active": True},
-    {"code": "87631", "display": "Detection test by nucleic acid for multiple types of respiratory virus,", "is_active": True},
-    {"code": "87634", "display": "Detection test by nucleic acid for respiratory syncytial virus, amplified probe", "is_active": True},
-    {"code": "87635", "display": "Amplifed DNA or RNA probe detection of severe acute respiratory syndrome", "is_active": True}
+    {"code": "49765-1", "display": "Calcium", "is_active": True, "currency_symbol": "$", "center_price": 10, "home_price": 12, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "2069-3", "display": "Chloride", "is_active": True, "currency_symbol": "$", "center_price": 10, "home_price": 12, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "59826-8", "display": "Creatinine", "is_active": True, "currency_symbol": "$",  "center_price": 10, "home_price": 12, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "2024-8", "display": "Carbon Dioxide", "is_active": True, "currency_symbol": "$",  "center_price": 10, "home_price": 12, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "1557-8", "display": "Glucose", "is_active": True, "currency_symbol": "$",  "center_price": 10, "home_price": 12, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "6298-4", "display": "Potassium", "is_active": True, "currency_symbol": "$",  "center_price": 10, "home_price": 12, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "2947-0", "display": "Sodium", "is_active": True, "currency_symbol": "$",  "center_price": 10, "home_price": 12, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "6299-2", "display": "Urea Nitrogen", "is_active": True, "currency_symbol": "$",  "center_price": 10, "home_price": 12, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "1751-7", "display": "Albumin", "is_active": True, "currency_symbol": "$",  "center_price": 10, "home_price": 12, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "42719-5", "display": "Total Bilirubin", "is_active": True, "currency_symbol": "$",  "center_price": 15, "home_price": 18, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "77141-0", "display": "Alkaline Phosphatase", "is_active": True, "currency_symbol": "$", "center_price": 14, "home_price": 17, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "76625-3", "display": "ALT", "is_active": True, "currency_symbol": "$",  "center_price": 13, "home_price": 16, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "48136-6", "display": "AST", "is_active": True, "currency_symbol": "$",  "center_price": 12, "home_price": 15, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "2093-3", "display": "Total Cholesterol", "is_active": True, "currency_symbol": "$",  "center_price": 16, "home_price": 19, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "3043-7", "display": "Triglycerides", "is_active": True, "currency_symbol": "$",  "center_price": 18, "home_price": 20, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "2085-9", "display": "HDL-Cholesterol", "is_active": True, "currency_symbol": "$",  "center_price": 11, "home_price": 14, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "98981-4", "display": "Uric Acid", "is_active": True, "currency_symbol": "$",  "center_price": 17, "home_price": 21, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "4548-4", "display": "Hemoglobin A1C", "is_active": True, "currency_symbol": "$",  "center_price": 19, "home_price": 22, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "3015-5", "display": "TSH", "is_active": True, "currency_symbol": "$",  "center_price": 20, "home_price": 23, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "3024-7", "display": "Free T4", "is_active": True, "currency_symbol": "$", "center_price": 21, "home_price": 25, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "20507-0", "display": "RPR", "is_active": True,"currency_symbol": "$", "center_price": 22, "home_price": 26, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "58410-2", "display": "Covid", "is_active": True, "currency_symbol": "$", "center_price": 23, "home_price": 28, "service_type": "X Ray Studies", "is_telehealth": False},
+    {"code": "0101U", "display": "Test for detection of high-risk human papillomavirus in male urine", "is_active": True,"currency_symbol": "$", "center_price": 30, "home_price": 35, "service_type": "Ultrasound Study", "is_telehealth": False},
+    {"code": "0240U", "display": "Respiratory infectious agent detection by RNA for severe acute respiratory", "currency_symbol": "$", "is_active": True, "center_price": 31, "home_price": 38, "service_type": "Ultrasound Study", "is_telehealth": False},
+    {"code": "0353U", "display": "Detection of bacteria causing vaginosis and vaginitis by multiplex amplified", "currency_symbol": "$", "is_active": True, "center_price": 28, "home_price": 33, "service_type": "Ultrasound Study", "is_telehealth": False},
+    {"code": "0354U", "display": "Detection of Chlamydia trachomatis and Neisseria gonorrhoeae by multiplex", "currency_symbol": "$", "is_active": True, "center_price": 25, "home_price": 30, "service_type": "Ultrasound Study", "is_telehealth": False},
+    {"code": "0372U", "display": "Test for 16 genitourinary bacterial organisms and 1 genitourinary fungal", "currency_symbol": "$", "is_active": True, "center_price": 29, "home_price": 34, "service_type": "Ultrasound Study", "is_telehealth": False},
+    {"code": "80061", "display": "Blood test, lipids (cholesterol and triglycerides)", "is_active": True, "currency_symbol": "$", "center_price": 22, "home_price": 26, "service_type": "Ultrasound Study", "is_telehealth": False},
+    {"code": "82731", "display": "Ferritin (blood protein) level", "is_active": True, "currency_symbol": "$", "center_price": 24, "home_price": 28, "service_type": "Ultrasound Study", "is_telehealth": False},
+    {"code": "82747", "display": "Folic acid level, serum", "is_active": True, "currency_symbol": "$", "center_price": 21, "home_price": 25, "service_type": "Ultrasound Study", "is_telehealth": False},
+    {"code": "83037", "display": "Hemoglobin A1C level", "is_active": True, "currency_symbol": "$", "center_price": 27, "home_price": 31, "service_type": "Ultrasound Study", "is_telehealth": False},
+    {"code": "85032", "display": "Complete blood cell count (red cells, white blood cell, platelets), automated", "is_active": True, "currency_symbol": "$", "center_price": 23, "home_price": 29, "service_type": "Ultrasound Study", "is_telehealth": False},
+    {"code": "86704", "display": "Analysis for antibody to HIV-1 and HIV-2 virus", "is_active": True, "currency_symbol": "$", "center_price": 26, "home_price": 31, "service_type": "Ultrasound Study", "is_telehealth": False},
+    {"code": "86707", "display": "Hepatitis B surface antibody measurement", "is_active": True, "currency_symbol": "$", "center_price": 20, "home_price": 24, "service_type": "EKG Services", "is_telehealth": False},
+    {"code": "86709", "display": "Measurement of Hepatitis A antibody", "is_active": True, "currency_symbol": "$", "center_price": 21, "home_price": 26, "service_type": "EKG Services", "is_telehealth": False},
+    {"code": "86710", "display": "Measurement of Hepatitis A antibody (IgM)", "is_active": True, "currency_symbol": "$", "center_price": 19, "home_price": 23, "service_type": "EKG Services", "is_telehealth": False},
+    {"code": "86711", "display": "Analysis for antibody to Influenza virus", "is_active": True, "currency_symbol": "$", "center_price": 18, "home_price": 22, "service_type": "EKG Services", "is_telehealth": False},
+    {"code": "86780", "display": "Analysis for antibody, Treponema pallidum", "is_active": True, "currency_symbol": "$", "center_price": 22, "home_price": 27, "service_type": "EKG Services", "is_telehealth": False},
+    {"code": "86803", "display": "Hepatitis C antibody measurement", "is_active": True, "currency_symbol": "$", "center_price": 23, "home_price": 28, "service_type": "EKG Services", "is_telehealth": False},
+    {"code": "87154", "display": "Identification of organisms by nucleic acid sequencing method", "is_active": True, "currency_symbol": "$", "center_price": 25, "home_price": 30, "service_type": "EKG Services", "is_telehealth": False},
+    {"code": "87341", "display": "Detection test by immunoassay technique for Hepatitis B surface antigen", "is_active": True, "currency_symbol": "$", "center_price": 22, "home_price": 27, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "87389", "display": "Detection test by immunoassay technique for HIV-1 antigen and HIV-1 and HIV-2", "is_active": True, "currency_symbol": "$", "center_price": 23, "home_price": 28, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "87506", "display": "Detection test by nucleic acid for digestive tract pathogen, multiple types or", "is_active": True, "currency_symbol": "$", "center_price": 24, "home_price": 29, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "87512", "display": "Detection test for gardnerella vaginalis (bacteria), amplified probe technique", "is_active": True, "currency_symbol": "$", "center_price": 25, "home_price": 30, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "87591", "display": "Detection test by nucleic acid for Neisseria gonorrhoeae (gonorrhoeae", "is_active": True, "currency_symbol": "$", "center_price": 26, "home_price": 31, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "87631", "display": "Detection test by nucleic acid for human papillomavirus (hpv), types 16 and 18", "is_active": True, "currency_symbol": "$", "center_price": 27, "home_price": 31, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "87631", "display": "Detection test by nucleic acid for multiple types of respiratory virus", "is_active": True, "currency_symbol": "$", "center_price": 28, "home_price": 33, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "87634", "display": "Detection test by nucleic acid for respiratory syncytial virus, amplified probe", "is_active": True, "currency_symbol": "$", "center_price": 29, "home_price": 34, "service_type": "Clinical Laboratory", "is_telehealth": False},
+    {"code": "87635", "display": "Amplified DNA or RNA probe detection of severe acute respiratory syndrome", "is_active": True, "currency_symbol": "$", "center_price": 30, "home_price": 35, "service_type": "Clinical Laboratory", "is_telehealth": False}
 ]
 
 
@@ -170,6 +171,15 @@ concept_data = [
     }
 ]
 
+location_data = [
+    {"city": "New York", "state": "New York", "pincode": "10001", "service_center_name": "Manhattan Health Center", "is_active": True},
+    {"city": "Los Angeles", "state": "California", "pincode": "90001", "service_center_name": "LA Medical Services", "is_active": True},
+    {"city": "Chicago", "state": "Illinois", "pincode": "60601", "service_center_name": "Chicago Care Clinic", "is_active": True},
+    {"city": "Houston", "state": "Texas", "pincode": "77001", "service_center_name": "Houston Health Center", "is_active": True},
+    {"city": "Phoenix", "state": "Arizona", "pincode": "85001", "service_center_name": "Phoenix Medical Hub", "is_active": True}
+]
+
+
 # Create tables and populate them with data
 for table in tables:
     table_creation_response = requests.put(
@@ -191,6 +201,8 @@ for table in tables:
         data_list = lab_test_data
     elif table['id'] == "CimparInsuranceCompany":
         data_list = insurance_company_data
+    elif table['id'] == "CimparLocation":
+        data_list = location_data
     elif table["id"] == "Concept":
         data_list = concept_data
 

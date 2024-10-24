@@ -28,7 +28,7 @@ from utils.config import Logs
 from routes import (insurance_routes, integration_pipeline_router, account_router, patient_routes,
                     encounter_routes, medication_routes, condition_allergy_routes, appointment_routes,
                     lab_result_routes, custom_message_router, service_history_routes, master_routers,
-                    version_router)
+                    version_router, payment_router, location_router)
 
 
 # Load settings
@@ -61,9 +61,11 @@ app.include_router(custom_message_router.router, prefix="/api", tags=["CUSTOM_ME
 app.include_router(encounter_routes.router, prefix="/api", tags=["ENCOUNTER"])
 app.include_router(insurance_routes.router, prefix="/api", tags=["INSURANCE"])
 app.include_router(lab_result_routes.router, prefix="/api", tags=["LAB_RESULT"])
+app.include_router(location_router.router, prefix="/api", tags=["LOCATION"])
 app.include_router(master_routers.router, prefix="/api", tags=["MASTER"])
 app.include_router(medication_routes.router, prefix="/api", tags=["MEDICATION"])
 app.include_router(patient_routes.router, prefix="/api", tags=["PATIENT"])
+app.include_router(payment_router.router, prefix="/api", tags=["PAYMENT"])
 app.include_router(service_history_routes.router, prefix="/api", tags=["SERVICE_HISTORY"])
 app.include_router(version_router.router, prefix="/api", tags=["VERSION"])
 
